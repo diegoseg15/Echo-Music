@@ -169,23 +169,17 @@ object DownloadNotificationManager {
 
     @RequiresApi(Build.VERSION_CODES.BAKLAVA)
     private fun showDownloadCompleteModern(version: String, filePath: String) {
-        val installIntent = Intent(Intent.ACTION_VIEW).apply {
-            setDataAndType(
-                androidx.core.content.FileProvider.getUriForFile(
-                    appContext,
-                    "${appContext.packageName}.FileProvider",
-                    java.io.File(filePath)
-                ),
-                "application/vnd.android.package-archive"
-            )
-            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        val releaseIntent = Intent(
+            Intent.ACTION_VIEW,
+            android.net.Uri.parse("https://github.com/EchoMusicApp/Echo-Music/releases/tag/$version")
+        ).apply {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         }
 
         val pendingIntent = PendingIntent.getActivity(
             appContext,
             0,
-            installIntent,
+            releaseIntent,
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
 
@@ -280,23 +274,17 @@ object DownloadNotificationManager {
     }
 
     private fun showDownloadCompleteLegacy(version: String, filePath: String) {
-        val installIntent = Intent(Intent.ACTION_VIEW).apply {
-            setDataAndType(
-                androidx.core.content.FileProvider.getUriForFile(
-                    appContext,
-                    "${appContext.packageName}.FileProvider",
-                    java.io.File(filePath)
-                ),
-                "application/vnd.android.package-archive"
-            )
-            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        val releaseIntent = Intent(
+            Intent.ACTION_VIEW,
+            android.net.Uri.parse("https://github.com/EchoMusicApp/Echo-Music/releases/tag/$version")
+        ).apply {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         }
 
         val pendingIntent = PendingIntent.getActivity(
             appContext,
             0,
-            installIntent,
+            releaseIntent,
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
 
