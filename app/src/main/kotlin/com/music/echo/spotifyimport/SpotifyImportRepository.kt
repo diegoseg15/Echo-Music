@@ -9,7 +9,27 @@ package iad1tya.echo.music.spotifyimport
 
 import android.content.Context
 import androidx.datastore.preferences.core.edit
+import com.music.innertube.YouTube
+import com.music.innertube.models.SongItem
 import dagger.hilt.android.qualifiers.ApplicationContext
+import iad1tya.echo.music.R
+import iad1tya.echo.music.constants.SpotifyAccountAvatarUrlKey
+import iad1tya.echo.music.constants.SpotifyAccountNameKey
+import iad1tya.echo.music.db.MusicDatabase
+import iad1tya.echo.music.db.entities.PlaylistEntity
+import iad1tya.echo.music.db.entities.PlaylistSongMap
+import iad1tya.echo.music.models.MediaMetadata
+import iad1tya.echo.music.models.toMediaMetadata
+import iad1tya.echo.music.security.SecureAuthStore
+import iad1tya.echo.music.security.WebAuthCookieCleaner
+import iad1tya.echo.music.spotify.Spotify
+import iad1tya.echo.music.spotify.SpotifyAuth
+import iad1tya.echo.music.spotify.SpotifyMapper
+import iad1tya.echo.music.spotify.models.SpotifyPlaylist
+import iad1tya.echo.music.spotify.models.SpotifyPlaylistTracksRef
+import iad1tya.echo.music.spotify.models.SpotifyTrack
+import iad1tya.echo.music.utils.dataStore
+import iad1tya.echo.music.utils.reportException
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
@@ -21,29 +41,6 @@ import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
-import iad1tya.echo.music.R
-import iad1tya.echo.music.constants.SpotifyAccessTokenExpiresAtKey
-import iad1tya.echo.music.constants.SpotifyAccessTokenKey
-import iad1tya.echo.music.constants.SpotifyAccountAvatarUrlKey
-import iad1tya.echo.music.constants.SpotifyAccountNameKey
-import iad1tya.echo.music.constants.SpotifySpDcKey
-import iad1tya.echo.music.constants.SpotifySpKeyKey
-import iad1tya.echo.music.db.MusicDatabase
-import iad1tya.echo.music.db.entities.PlaylistEntity
-import iad1tya.echo.music.db.entities.PlaylistSongMap
-import com.music.innertube.YouTube
-import com.music.innertube.models.SongItem
-import iad1tya.echo.music.models.MediaMetadata
-import iad1tya.echo.music.models.toMediaMetadata
-import iad1tya.echo.music.spotify.Spotify
-import iad1tya.echo.music.spotify.SpotifyAuth
-import iad1tya.echo.music.spotify.SpotifyMapper
-import iad1tya.echo.music.spotify.models.SpotifyPlaylist
-import iad1tya.echo.music.spotify.models.SpotifyPlaylistTracksRef
-import iad1tya.echo.music.spotify.models.SpotifyTrack
-import iad1tya.echo.music.utils.clearWebAuthSession
-import iad1tya.echo.music.utils.dataStore
-import iad1tya.echo.music.utils.reportException
 import java.time.LocalDateTime
 import java.util.concurrent.atomic.AtomicInteger
 import javax.inject.Inject
@@ -51,498 +48,607 @@ import javax.inject.Singleton
 import kotlin.math.roundToInt
 
 @Singleton
-class SpotifyImportRepository @Inject constructor(
-    @ApplicationContext private val context: Context,
-    private val database: MusicDatabase,
-) {
-    private val mapperMutex = Mutex()
+class SpotifyImportRepository
+    @Inject
+    constructor(
+        @ApplicationContext private val context: Context,
+        private val database: MusicDatabase,
+    ) {
+        private val mapperMutex = Mutex()
 
-    suspend fun restoreSession(): SpotifyImportSession =
-        withContext(Dispatchers.IO) {
-            val prefs = context.dataStore.data.first()
-            val token = prefs[SpotifyAccessTokenKey].orEmpty()
-            val expiresAt = prefs[SpotifyAccessTokenExpiresAtKey] ?: 0L
-            val accountName = prefs[SpotifyAccountNameKey].orEmpty()
-            val avatarUrl = prefs[SpotifyAccountAvatarUrlKey]
+        suspend fun restoreSession(): SpotifyImportSession =
+            withContext(Dispatchers.IO) {
+                val prefs = context.dataStore.data.first()
 
-            if (token.isNotBlank() && expiresAt > System.currentTimeMillis() + TOKEN_EXPIRY_GRACE_MS) {
-                Spotify.accessToken = token
-                return@withContext SpotifyImportSession(
-                    isAuthenticated = true,
-                    accountName = accountName,
-                    accountAvatarUrl = avatarUrl,
-                )
-            }
+                val token =
+                    SecureAuthStore
+                        .get(
+                            context,
+                            SecureAuthStore.SPOTIFY_ACCESS_TOKEN,
+                        ).orEmpty()
 
-            val spDc = prefs[SpotifySpDcKey].orEmpty()
-            if (spDc.isBlank()) {
-                return@withContext SpotifyImportSession()
-            }
+                val expiresAt =
+                    SecureAuthStore.getLong(
+                        context,
+                        SecureAuthStore.SPOTIFY_ACCESS_TOKEN_EXPIRES_AT,
+                    )
 
-            refreshAccessToken(spDc = spDc, spKey = prefs[SpotifySpKeyKey].orEmpty())
-                .fold(
-                    onSuccess = {
-                        val refreshed = context.dataStore.data.first()
-                        SpotifyImportSession(
-                            isAuthenticated = true,
-                            accountName = refreshed[SpotifyAccountNameKey].orEmpty(),
-                            accountAvatarUrl = refreshed[SpotifyAccountAvatarUrlKey],
-                        )
-                    },
-                    onFailure = {
-                        if (it is CancellationException) throw it
-                        reportException(it)
-                        SpotifyImportSession()
-                    },
-                )
-        }
+                val accountName = prefs[SpotifyAccountNameKey].orEmpty()
+                val avatarUrl = prefs[SpotifyAccountAvatarUrlKey]
 
-    suspend fun connectWithCookies(
-        spDc: String,
-        spKey: String,
-    ): SpotifyImportSession =
-        withContext(Dispatchers.IO) {
-            context.dataStore.edit { prefs ->
-                prefs[SpotifySpDcKey] = spDc
-                if (spKey.isNotBlank()) {
-                    prefs[SpotifySpKeyKey] = spKey
-                } else {
-                    prefs.remove(SpotifySpKeyKey)
+                if (token.isNotBlank() && expiresAt > System.currentTimeMillis() + TOKEN_EXPIRY_GRACE_MS) {
+                    Spotify.accessToken = token
+                    return@withContext SpotifyImportSession(
+                        isAuthenticated = true,
+                        accountName = accountName,
+                        accountAvatarUrl = avatarUrl,
+                    )
                 }
+
+                val spDc =
+                    SecureAuthStore
+                        .get(
+                            context,
+                            SecureAuthStore.SPOTIFY_SP_DC,
+                        ).orEmpty()
+
+                if (spDc.isBlank()) {
+                    return@withContext SpotifyImportSession()
+                }
+
+                val spKey =
+                    SecureAuthStore
+                        .get(
+                            context,
+                            SecureAuthStore.SPOTIFY_SP_KEY,
+                        ).orEmpty()
+
+                refreshAccessToken(spDc = spDc, spKey = spKey)
+                    .fold(
+                        onSuccess = {
+                            val refreshed = context.dataStore.data.first()
+                            SpotifyImportSession(
+                                isAuthenticated = true,
+                                accountName = refreshed[SpotifyAccountNameKey].orEmpty(),
+                                accountAvatarUrl = refreshed[SpotifyAccountAvatarUrlKey],
+                            )
+                        },
+                        onFailure = {
+                            if (it is CancellationException) throw it
+                            reportException(it)
+                            SpotifyImportSession()
+                        },
+                    )
             }
-            refreshAccessToken(spDc = spDc, spKey = spKey).getOrThrow()
-            val prefs = context.dataStore.data.first()
-            SpotifyImportSession(
-                isAuthenticated = true,
-                accountName = prefs[SpotifyAccountNameKey].orEmpty(),
-                accountAvatarUrl = prefs[SpotifyAccountAvatarUrlKey],
-            )
-        }
 
-    suspend fun logout() {
-        withContext(Dispatchers.IO) {
-            context.dataStore.edit { prefs ->
-                prefs.remove(SpotifySpDcKey)
-                prefs.remove(SpotifySpKeyKey)
-                prefs.remove(SpotifyAccessTokenKey)
-                prefs.remove(SpotifyAccessTokenExpiresAtKey)
-                prefs.remove(SpotifyAccountNameKey)
-                prefs.remove(SpotifyAccountAvatarUrlKey)
-            }
-            Spotify.accessToken = null
-            runCatching { clearWebAuthSession(context) }
-                .onFailure(::reportException)
-        }
-    }
-
-    suspend fun loadSources(): List<SpotifyImportSource> =
-        withContext(Dispatchers.IO) {
-            ensureAuthenticated()
-            refreshProfile()
-
-            val likedSongs = spotifyCallWithTokenRetry {
-                Spotify.likedSongs(limit = 1, offset = 0).getOrThrow()
-            }
-            val playlists = fetchAllPlaylists()
-
-            buildList {
-                add(
-                    SpotifyImportSource.LikedSongs(
-                        title = context.getString(R.string.spotify_liked_songs),
-                        trackCount = likedSongs.total,
-                    ),
+        suspend fun connectWithCookies(
+            spDc: String,
+            spKey: String,
+        ): SpotifyImportSession =
+            withContext(Dispatchers.IO) {
+                SecureAuthStore.put(
+                    context,
+                    SecureAuthStore.SPOTIFY_SP_DC,
+                    spDc,
                 )
-                playlists.forEach { playlist ->
-                    if (playlist.id.isNotBlank()) {
-                        add(SpotifyImportSource.Playlist(playlist))
+
+                if (spKey.isNotBlank()) {
+                    SecureAuthStore.put(
+                        context,
+                        SecureAuthStore.SPOTIFY_SP_KEY,
+                        spKey,
+                    )
+                } else {
+                    SecureAuthStore.remove(
+                        context,
+                        SecureAuthStore.SPOTIFY_SP_KEY,
+                    )
+                }
+
+                withContext(Dispatchers.Main) {
+                    WebAuthCookieCleaner.clearWebViewAuthState()
+                }
+
+                refreshAccessToken(spDc = spDc, spKey = spKey).getOrThrow()
+
+                val prefs = context.dataStore.data.first()
+                SpotifyImportSession(
+                    isAuthenticated = true,
+                    accountName = prefs[SpotifyAccountNameKey].orEmpty(),
+                    accountAvatarUrl = prefs[SpotifyAccountAvatarUrlKey],
+                )
+            }
+
+        suspend fun logout() {
+            withContext(Dispatchers.IO) {
+                SecureAuthStore.clearSpotify(context)
+
+                context.dataStore.edit { prefs ->
+                    prefs.remove(SpotifyAccountNameKey)
+                    prefs.remove(SpotifyAccountAvatarUrlKey)
+                }
+
+                Spotify.accessToken = null
+
+                runCatching { WebAuthCookieCleaner.clearWebViewAuthState() }
+            }
+        }
+
+        suspend fun loadSources(): List<SpotifyImportSource> =
+            withContext(Dispatchers.IO) {
+                ensureAuthenticated()
+                refreshProfile()
+
+                val likedSongs =
+                    spotifyCallWithTokenRetry {
+                        Spotify.likedSongs(limit = 1, offset = 0).getOrThrow()
+                    }
+                val playlists = fetchAllPlaylists()
+
+                buildList {
+                    add(
+                        SpotifyImportSource.LikedSongs(
+                            title = context.getString(R.string.spotify_liked_songs),
+                            trackCount = likedSongs.total,
+                        ),
+                    )
+                    playlists.forEach { playlist ->
+                        if (playlist.id.isNotBlank()) {
+                            add(SpotifyImportSource.Playlist(playlist))
+                        }
                     }
                 }
             }
-        }
 
-    suspend fun importSources(
-        sources: List<SpotifyImportSource>,
-        onProgress: (SpotifyImportProgressUi) -> Unit,
-    ): SpotifyImportSummaryUi =
-        withContext(Dispatchers.IO) {
-            ensureAuthenticated()
-            val summaries = ArrayList<SpotifyImportSourceSummaryUi>(sources.size)
+        suspend fun importSources(
+            sources: List<SpotifyImportSource>,
+            onProgress: (SpotifyImportProgressUi) -> Unit,
+        ): SpotifyImportSummaryUi =
+            withContext(Dispatchers.IO) {
+                ensureAuthenticated()
+                val summaries = ArrayList<SpotifyImportSourceSummaryUi>(sources.size)
 
-            sources.forEachIndexed { sourceIndex, source ->
-                onProgress(
-                    SpotifyImportProgressUi(
-                        sourceTitle = source.title,
-                        completedSources = sourceIndex,
-                        totalSources = sources.size,
-                        matchedTracks = 0,
-                        totalTracks = source.trackCount ?: 0,
-                        percent = progressPercent(sourceIndex, sources.size, 0, source.trackCount ?: 0),
-                    ),
-                )
-
-                val tracks = fetchAllTracks(source)
-                if (tracks.isEmpty()) {
-                    mirrorPlaylist(source, emptyList())
-                    summaries += SpotifyImportSourceSummaryUi(
-                        title = source.title,
-                        totalTracks = 0,
-                        importedTracks = 0,
-                        failedTracks = 0,
+                sources.forEachIndexed { sourceIndex, source ->
+                    onProgress(
+                        SpotifyImportProgressUi(
+                            sourceTitle = source.title,
+                            completedSources = sourceIndex,
+                            totalSources = sources.size,
+                            matchedTracks = 0,
+                            totalTracks = source.trackCount ?: 0,
+                            percent = progressPercent(sourceIndex, sources.size, 0, source.trackCount ?: 0),
+                        ),
                     )
+
+                    val tracks = fetchAllTracks(source)
+                    if (tracks.isEmpty()) {
+                        mirrorPlaylist(source, emptyList())
+                        summaries +=
+                            SpotifyImportSourceSummaryUi(
+                                title = source.title,
+                                totalTracks = 0,
+                                importedTracks = 0,
+                                failedTracks = 0,
+                            )
+                        onProgress(
+                            SpotifyImportProgressUi(
+                                sourceTitle = source.title,
+                                completedSources = sourceIndex + 1,
+                                totalSources = sources.size,
+                                matchedTracks = 0,
+                                totalTracks = 0,
+                                percent = progressPercent(sourceIndex + 1, sources.size, 0, 0),
+                            ),
+                        )
+                        return@forEachIndexed
+                    }
+
+                    val matched =
+                        matchTracks(
+                            sourceIndex = sourceIndex,
+                            sourceCount = sources.size,
+                            sourceTitle = source.title,
+                            tracks = tracks,
+                            onProgress = onProgress,
+                        )
+
+                    mirrorPlaylist(source, matched.map { it.metadata })
+                    summaries +=
+                        SpotifyImportSourceSummaryUi(
+                            title = source.title,
+                            totalTracks = tracks.size,
+                            importedTracks = matched.size,
+                            failedTracks = tracks.size - matched.size,
+                        )
                     onProgress(
                         SpotifyImportProgressUi(
                             sourceTitle = source.title,
                             completedSources = sourceIndex + 1,
                             totalSources = sources.size,
-                            matchedTracks = 0,
-                            totalTracks = 0,
+                            matchedTracks = matched.size,
+                            totalTracks = tracks.size,
                             percent = progressPercent(sourceIndex + 1, sources.size, 0, 0),
                         ),
                     )
-                    return@forEachIndexed
                 }
 
-                val matched = matchTracks(
-                    sourceIndex = sourceIndex,
-                    sourceCount = sources.size,
-                    sourceTitle = source.title,
-                    tracks = tracks,
-                    onProgress = onProgress,
+                SpotifyImportSummaryUi(summaries)
+            }
+
+        private suspend fun ensureAuthenticated() {
+            val token =
+                SecureAuthStore
+                    .get(
+                        context,
+                        SecureAuthStore.SPOTIFY_ACCESS_TOKEN,
+                    ).orEmpty()
+
+            val expiresAt =
+                SecureAuthStore.getLong(
+                    context,
+                    SecureAuthStore.SPOTIFY_ACCESS_TOKEN_EXPIRES_AT,
                 )
 
-                mirrorPlaylist(source, matched.map { it.metadata })
-                summaries += SpotifyImportSourceSummaryUi(
-                    title = source.title,
-                    totalTracks = tracks.size,
-                    importedTracks = matched.size,
-                    failedTracks = tracks.size - matched.size,
-                )
-                onProgress(
-                    SpotifyImportProgressUi(
-                        sourceTitle = source.title,
-                        completedSources = sourceIndex + 1,
-                        totalSources = sources.size,
-                        matchedTracks = matched.size,
-                        totalTracks = tracks.size,
-                        percent = progressPercent(sourceIndex + 1, sources.size, 0, 0),
-                    ),
-                )
+            if (token.isNotBlank() && expiresAt > System.currentTimeMillis() + TOKEN_EXPIRY_GRACE_MS) {
+                Spotify.accessToken = token
+                return
             }
 
-            SpotifyImportSummaryUi(summaries)
+            val spDc =
+                SecureAuthStore
+                    .get(
+                        context,
+                        SecureAuthStore.SPOTIFY_SP_DC,
+                    ).orEmpty()
+
+            if (spDc.isBlank()) {
+                throw IllegalStateException(context.getString(R.string.spotify_not_connected))
+            }
+
+            val spKey =
+                SecureAuthStore
+                    .get(
+                        context,
+                        SecureAuthStore.SPOTIFY_SP_KEY,
+                    ).orEmpty()
+
+            refreshAccessToken(spDc = spDc, spKey = spKey).getOrThrow()
         }
 
-    private suspend fun ensureAuthenticated() {
-        val prefs = context.dataStore.data.first()
-        val token = prefs[SpotifyAccessTokenKey].orEmpty()
-        val expiresAt = prefs[SpotifyAccessTokenExpiresAtKey] ?: 0L
-        if (token.isNotBlank() && expiresAt > System.currentTimeMillis() + TOKEN_EXPIRY_GRACE_MS) {
-            Spotify.accessToken = token
-            return
-        }
+        private suspend fun refreshAccessToken(
+            spDc: String,
+            spKey: String,
+        ): Result<Unit> =
+            SpotifyAuth
+                .fetchAccessToken(spDc = spDc, spKey = spKey)
+                .mapCatching { token ->
+                    Spotify.accessToken = token.accessToken
 
-        val spDc = prefs[SpotifySpDcKey].orEmpty()
-        if (spDc.isBlank()) {
-            throw IllegalStateException(context.getString(R.string.spotify_not_connected))
-        }
-        refreshAccessToken(spDc = spDc, spKey = prefs[SpotifySpKeyKey].orEmpty()).getOrThrow()
-    }
+                    SecureAuthStore.put(
+                        context,
+                        SecureAuthStore.SPOTIFY_ACCESS_TOKEN,
+                        token.accessToken,
+                    )
 
-    private suspend fun refreshAccessToken(
-        spDc: String,
-        spKey: String,
-    ): Result<Unit> =
-        SpotifyAuth.fetchAccessToken(spDc = spDc, spKey = spKey)
-            .mapCatching { token ->
-                Spotify.accessToken = token.accessToken
-                context.dataStore.edit { prefs ->
-                    prefs[SpotifyAccessTokenKey] = token.accessToken
-                    prefs[SpotifyAccessTokenExpiresAtKey] = token.accessTokenExpirationTimestampMs
+                    SecureAuthStore.putLong(
+                        context,
+                        SecureAuthStore.SPOTIFY_ACCESS_TOKEN_EXPIRES_AT,
+                        token.accessTokenExpirationTimestampMs,
+                    )
+
+                    refreshProfile()
                 }
-                refreshProfile()
-            }
 
-    private suspend fun refreshProfile() {
-        Spotify.me()
-            .onSuccess { user ->
-                context.dataStore.edit { prefs ->
-                    prefs[SpotifyAccountNameKey] = user.displayName.orEmpty()
-                    user.images.firstOrNull()?.url?.let { prefs[SpotifyAccountAvatarUrlKey] = it }
-                        ?: prefs.remove(SpotifyAccountAvatarUrlKey)
-                }
-            }
-            .onFailure { error ->
-                if (error is CancellationException) {
-                    throw error
-                }
-            }
-    }
-
-    private suspend fun fetchAllPlaylists(): List<SpotifyPlaylist> {
-        val playlists = ArrayList<SpotifyPlaylist>()
-        var offset = 0
-        val limit = 50
-
-        while (true) {
-            val page = spotifyCallWithTokenRetry {
-                Spotify.myPlaylists(limit = limit, offset = offset).getOrThrow()
-            }
-            if (page.items.isEmpty()) break
-            playlists += enrichPlaylistTrackCounts(page.items)
-            offset += page.items.size
-            if (offset >= page.total || page.items.size < limit) break
-        }
-
-        return playlists
-    }
-
-    private suspend fun enrichPlaylistTrackCounts(playlists: List<SpotifyPlaylist>): List<SpotifyPlaylist> =
-        coroutineScope {
-            val semaphore = Semaphore(MAX_CONCURRENT_SPOTIFY_COUNT_REQUESTS)
-            playlists.map { playlist ->
-                async {
-                    if (playlist.tracks?.total != null) {
-                        playlist
-                    } else {
-                        semaphore.withPermit {
-                            playlistTrackCount(playlist.id)
-                                ?.let { count -> playlist.copy(tracks = SpotifyPlaylistTracksRef(total = count)) }
-                                ?: playlist
-                        }
+        private suspend fun refreshProfile() {
+            Spotify
+                .me()
+                .onSuccess { user ->
+                    context.dataStore.edit { prefs ->
+                        prefs[SpotifyAccountNameKey] = user.displayName.orEmpty()
+                        user.images
+                            .firstOrNull()
+                            ?.url
+                            ?.let { prefs[SpotifyAccountAvatarUrlKey] = it }
+                            ?: prefs.remove(SpotifyAccountAvatarUrlKey)
+                    }
+                }.onFailure { error ->
+                    if (error is CancellationException) {
+                        throw error
                     }
                 }
-            }.awaitAll()
         }
 
-    private suspend fun playlistTrackCount(playlistId: String): Int? =
-        try {
-            spotifyCallWithTokenRetry {
-                Spotify.playlistTracks(
-                    playlistId = playlistId,
-                    limit = 1,
-                    offset = 0,
-                ).getOrThrow()
-            }.total
-        } catch (error: CancellationException) {
-            throw error
-        } catch (error: Throwable) {
-            reportException(error)
-            null
-        }
+        private suspend fun fetchAllPlaylists(): List<SpotifyPlaylist> {
+            val playlists = ArrayList<SpotifyPlaylist>()
+            var offset = 0
+            val limit = 50
 
-    private suspend fun fetchAllTracks(source: SpotifyImportSource): List<SpotifyTrack> {
-        val tracks = ArrayList<SpotifyTrack>()
-        var offset = 0
-        val limit = 100
-
-        while (true) {
-            val page =
-                when (source) {
-                    is SpotifyImportSource.LikedSongs -> {
-                        val paging = spotifyCallWithTokenRetry {
-                            Spotify.likedSongs(limit = limit, offset = offset).getOrThrow()
-                        }
-                        SpotifyTrackPage(
-                            items = paging.items.map { it.track },
-                            total = paging.total,
-                        )
+            while (true) {
+                val page =
+                    spotifyCallWithTokenRetry {
+                        Spotify.myPlaylists(limit = limit, offset = offset).getOrThrow()
                     }
-                    is SpotifyImportSource.Playlist -> {
-                        val paging = spotifyCallWithTokenRetry {
-                            Spotify.playlistTracks(
-                                playlistId = source.spotifyId,
-                                limit = limit,
-                                offset = offset,
-                            ).getOrThrow()
-                        }
-                        SpotifyTrackPage(
-                            items = paging.items.mapNotNull { it.track },
-                            total = paging.total,
-                        )
-                    }
-                }
-
-            if (page.items.isEmpty()) break
-            tracks += page.items.filter { it.name.isNotBlank() }
-            offset += page.items.size
-            if (offset >= page.total || page.items.size < limit) break
-        }
-
-        return tracks
-    }
-
-    private suspend fun <T> spotifyCallWithTokenRetry(block: suspend () -> T): T =
-        runCatching { block() }
-            .getOrElse { error ->
-                if ((error as? Spotify.SpotifyException)?.statusCode != 401) {
-                    throw error
-                }
-                val prefs = context.dataStore.data.first()
-                val spDc = prefs[SpotifySpDcKey].orEmpty()
-                if (spDc.isBlank()) {
-                    throw error
-                }
-                refreshAccessToken(spDc = spDc, spKey = prefs[SpotifySpKeyKey].orEmpty()).getOrThrow()
-                block()
+                if (page.items.isEmpty()) break
+                playlists += enrichPlaylistTrackCounts(page.items)
+                offset += page.items.size
+                if (offset >= page.total || page.items.size < limit) break
             }
 
-    private suspend fun matchTracks(
-        sourceIndex: Int,
-        sourceCount: Int,
-        sourceTitle: String,
-        tracks: List<SpotifyTrack>,
-        onProgress: (SpotifyImportProgressUi) -> Unit,
-    ): List<MatchedTrack> =
-        coroutineScope {
-            val semaphore = Semaphore(MAX_CONCURRENT_MATCHES)
-            val completed = AtomicInteger(0)
+            return playlists
+        }
 
-            tracks.mapIndexed { index, track ->
-                async {
-                    semaphore.withPermit {
-                        val matched =
-                            try {
-                                matchTrack(track, index)
-                            } catch (error: CancellationException) {
-                                throw error
-                            } catch (error: Throwable) {
-                                reportException(error)
-                                null
+        private suspend fun enrichPlaylistTrackCounts(playlists: List<SpotifyPlaylist>): List<SpotifyPlaylist> =
+            coroutineScope {
+                val semaphore = Semaphore(MAX_CONCURRENT_SPOTIFY_COUNT_REQUESTS)
+                playlists
+                    .map { playlist ->
+                        async {
+                            if (playlist.tracks?.total != null) {
+                                playlist
+                            } else {
+                                semaphore.withPermit {
+                                    playlistTrackCount(playlist.id)
+                                        ?.let { count -> playlist.copy(tracks = SpotifyPlaylistTracksRef(total = count)) }
+                                        ?: playlist
+                                }
                             }
-                        val completedCount = completed.incrementAndGet()
-                        onProgress(
-                            SpotifyImportProgressUi(
-                                sourceTitle = sourceTitle,
-                                completedSources = sourceIndex,
-                                totalSources = sourceCount,
-                                matchedTracks = completedCount,
-                                totalTracks = tracks.size,
-                                percent = progressPercent(sourceIndex, sourceCount, completedCount, tracks.size),
-                            ),
-                        )
-                        matched
-                    }
-                }
-            }.awaitAll()
-                .filterNotNull()
-                .sortedBy { it.index }
-        }
+                        }
+                    }.awaitAll()
+            }
 
-    private suspend fun matchTrack(
-        track: SpotifyTrack,
-        index: Int,
-    ): MatchedTrack? {
-        val searchResult = YouTube.search(
-            query = SpotifyMapper.buildSearchQuery(track),
-            filter = YouTube.SearchFilter.FILTER_SONG,
-        ).getOrElse { error ->
-            if (error is CancellationException) {
+        private suspend fun playlistTrackCount(playlistId: String): Int? =
+            try {
+                spotifyCallWithTokenRetry {
+                    Spotify
+                        .playlistTracks(
+                            playlistId = playlistId,
+                            limit = 1,
+                            offset = 0,
+                        ).getOrThrow()
+                }.total
+            } catch (error: CancellationException) {
                 throw error
+            } catch (error: Throwable) {
+                reportException(error)
+                null
             }
-            return null
+
+        private suspend fun fetchAllTracks(source: SpotifyImportSource): List<SpotifyTrack> {
+            val tracks = ArrayList<SpotifyTrack>()
+            var offset = 0
+            val limit = 100
+
+            while (true) {
+                val page =
+                    when (source) {
+                        is SpotifyImportSource.LikedSongs -> {
+                            val paging =
+                                spotifyCallWithTokenRetry {
+                                    Spotify.likedSongs(limit = limit, offset = offset).getOrThrow()
+                                }
+                            SpotifyTrackPage(
+                                items = paging.items.map { it.track },
+                                total = paging.total,
+                            )
+                        }
+
+                        is SpotifyImportSource.Playlist -> {
+                            val paging =
+                                spotifyCallWithTokenRetry {
+                                    Spotify
+                                        .playlistTracks(
+                                            playlistId = source.spotifyId,
+                                            limit = limit,
+                                            offset = offset,
+                                        ).getOrThrow()
+                                }
+                            SpotifyTrackPage(
+                                items = paging.items.mapNotNull { it.track },
+                                total = paging.total,
+                            )
+                        }
+                    }
+
+                if (page.items.isEmpty()) break
+                tracks += page.items.filter { it.name.isNotBlank() }
+                offset += page.items.size
+                if (offset >= page.total || page.items.size < limit) break
+            }
+
+            return tracks
         }
-        val candidates = searchResult.items
-            .filterIsInstance<SongItem>()
-            .distinctBy { it.id }
 
-        val best = mapperMutex.withLock {
-            candidates.maxByOrNull { candidate ->
-                SpotifyMapper.matchScore(
-                    spotifyTitle = track.name,
-                    spotifyArtist = track.artists.joinToString(" ") { it.name },
-                    spotifyDurationMs = track.durationMs,
-                    candidateTitle = candidate.title,
-                    candidateArtist = candidate.artists.joinToString(" ") { it.name },
-                    candidateDurationSec = candidate.duration,
-                )
+        private suspend fun <T> spotifyCallWithTokenRetry(block: suspend () -> T): T =
+            runCatching { block() }
+                .getOrElse { error ->
+                    if ((error as? Spotify.SpotifyException)?.statusCode != 401) {
+                        throw error
+                    }
+
+                    val spDc =
+                        SecureAuthStore
+                            .get(
+                                context,
+                                SecureAuthStore.SPOTIFY_SP_DC,
+                            ).orEmpty()
+
+                    if (spDc.isBlank()) {
+                        throw error
+                    }
+
+                    val spKey =
+                        SecureAuthStore
+                            .get(
+                                context,
+                                SecureAuthStore.SPOTIFY_SP_KEY,
+                            ).orEmpty()
+
+                    refreshAccessToken(spDc = spDc, spKey = spKey).getOrThrow()
+                    block()
+                }
+
+        private suspend fun matchTracks(
+            sourceIndex: Int,
+            sourceCount: Int,
+            sourceTitle: String,
+            tracks: List<SpotifyTrack>,
+            onProgress: (SpotifyImportProgressUi) -> Unit,
+        ): List<MatchedTrack> =
+            coroutineScope {
+                val semaphore = Semaphore(MAX_CONCURRENT_MATCHES)
+                val completed = AtomicInteger(0)
+
+                tracks
+                    .mapIndexed { index, track ->
+                        async {
+                            semaphore.withPermit {
+                                val matched =
+                                    try {
+                                        matchTrack(track, index)
+                                    } catch (error: CancellationException) {
+                                        throw error
+                                    } catch (error: Throwable) {
+                                        reportException(error)
+                                        null
+                                    }
+                                val completedCount = completed.incrementAndGet()
+                                onProgress(
+                                    SpotifyImportProgressUi(
+                                        sourceTitle = sourceTitle,
+                                        completedSources = sourceIndex,
+                                        totalSources = sourceCount,
+                                        matchedTracks = completedCount,
+                                        totalTracks = tracks.size,
+                                        percent = progressPercent(sourceIndex, sourceCount, completedCount, tracks.size),
+                                    ),
+                                )
+                                matched
+                            }
+                        }
+                    }.awaitAll()
+                    .filterNotNull()
+                    .sortedBy { it.index }
             }
-        } ?: return null
 
-        return MatchedTrack(index = index, metadata = best.toMediaMetadata())
-    }
+        private suspend fun matchTrack(
+            track: SpotifyTrack,
+            index: Int,
+        ): MatchedTrack? {
+            val searchResult =
+                YouTube
+                    .search(
+                        query = SpotifyMapper.buildSearchQuery(track),
+                        filter = YouTube.SearchFilter.FILTER_SONG,
+                    ).getOrElse { error ->
+                        if (error is CancellationException) {
+                            throw error
+                        }
+                        return null
+                    }
+            val candidates =
+                searchResult.items
+                    .filterIsInstance<SongItem>()
+                    .distinctBy { it.id }
 
-    private suspend fun mirrorPlaylist(
-        source: SpotifyImportSource,
-        tracks: List<MediaMetadata>,
-    ) {
-        database.withTransaction {
-            val existing = getPlaylistById(source.localPlaylistId)
-            val now = LocalDateTime.now()
-            val entity =
-                existing?.playlist?.copy(
-                    name = source.title,
-                    bookmarkedAt = existing.playlist.bookmarkedAt ?: now,
-                    lastUpdateTime = now,
-                    thumbnailUrl = source.thumbnailUrl,
-                    isEditable = true,
-                ) ?: PlaylistEntity(
-                    id = source.localPlaylistId,
-                    name = source.title,
-                    bookmarkedAt = now,
-                    lastUpdateTime = now,
-                    thumbnailUrl = source.thumbnailUrl,
-                    isEditable = true,
-                )
+            val best =
+                mapperMutex.withLock {
+                    candidates.maxByOrNull { candidate ->
+                        SpotifyMapper.matchScore(
+                            spotifyTitle = track.name,
+                            spotifyArtist = track.artists.joinToString(" ") { it.name },
+                            spotifyDurationMs = track.durationMs,
+                            candidateTitle = candidate.title,
+                            candidateArtist = candidate.artists.joinToString(" ") { it.name },
+                            candidateDurationSec = candidate.duration,
+                        )
+                    }
+                } ?: return null
 
-            if (existing == null) {
-                insert(entity)
-            } else {
-                update(entity)
+            return MatchedTrack(index = index, metadata = best.toMediaMetadata())
+        }
+
+        private suspend fun mirrorPlaylist(
+            source: SpotifyImportSource,
+            tracks: List<MediaMetadata>,
+        ) {
+            database.withTransaction {
+                val existing = getPlaylistById(source.localPlaylistId)
+                val now = LocalDateTime.now()
+                val entity =
+                    existing?.playlist?.copy(
+                        name = source.title,
+                        bookmarkedAt = existing.playlist.bookmarkedAt ?: now,
+                        lastUpdateTime = now,
+                        thumbnailUrl = source.thumbnailUrl,
+                        isEditable = true,
+                    ) ?: PlaylistEntity(
+                        id = source.localPlaylistId,
+                        name = source.title,
+                        bookmarkedAt = now,
+                        lastUpdateTime = now,
+                        thumbnailUrl = source.thumbnailUrl,
+                        isEditable = true,
+                    )
+
+                if (existing == null) {
+                    insert(entity)
+                } else {
+                    update(entity)
+                }
+
+                tracks.forEach { metadata ->
+                    insert(metadata)
+                }
+
+                clearPlaylist(source.localPlaylistId)
+                tracks.forEachIndexed { index, metadata ->
+                    insert(
+                        PlaylistSongMap(
+                            playlistId = source.localPlaylistId,
+                            songId = metadata.id,
+                            position = index,
+                            setVideoId = metadata.setVideoId,
+                        ),
+                    )
+                }
+                update(entity.copy(lastUpdateTime = now))
             }
+        }
 
-            tracks.forEach { metadata ->
-                insert(metadata)
-            }
+        private fun progressPercent(
+            completedSources: Int,
+            totalSources: Int,
+            completedTracks: Int,
+            totalTracks: Int,
+        ): Int {
+            if (totalSources <= 0) return 0
+            val sourceProgress =
+                if (totalTracks <= 0) {
+                    0f
+                } else {
+                    completedTracks.toFloat() / totalTracks.toFloat()
+                }
+            return (((completedSources + sourceProgress) / totalSources.toFloat()) * 100f)
+                .roundToInt()
+                .coerceIn(0, 100)
+        }
 
-            clearPlaylist(source.localPlaylistId)
-            tracks.forEachIndexed { index, metadata ->
-                insert(
-                    PlaylistSongMap(
-                        playlistId = source.localPlaylistId,
-                        songId = metadata.id,
-                        position = index,
-                        setVideoId = metadata.setVideoId,
-                    ),
-                )
-            }
-            update(entity.copy(lastUpdateTime = now))
+        private data class SpotifyTrackPage(
+            val items: List<SpotifyTrack>,
+            val total: Int,
+        )
+
+        private data class MatchedTrack(
+            val index: Int,
+            val metadata: MediaMetadata,
+        )
+
+        companion object {
+            private const val MAX_CONCURRENT_MATCHES = 4
+            private const val MAX_CONCURRENT_SPOTIFY_COUNT_REQUESTS = 4
+            private const val TOKEN_EXPIRY_GRACE_MS = 60_000L
         }
     }
-
-    private fun progressPercent(
-        completedSources: Int,
-        totalSources: Int,
-        completedTracks: Int,
-        totalTracks: Int,
-    ): Int {
-        if (totalSources <= 0) return 0
-        val sourceProgress =
-            if (totalTracks <= 0) {
-                0f
-            } else {
-                completedTracks.toFloat() / totalTracks.toFloat()
-            }
-        return (((completedSources + sourceProgress) / totalSources.toFloat()) * 100f)
-            .roundToInt()
-            .coerceIn(0, 100)
-    }
-
-    private data class SpotifyTrackPage(
-        val items: List<SpotifyTrack>,
-        val total: Int,
-    )
-
-    private data class MatchedTrack(
-        val index: Int,
-        val metadata: MediaMetadata,
-    )
-
-    companion object {
-        private const val MAX_CONCURRENT_MATCHES = 4
-        private const val MAX_CONCURRENT_SPOTIFY_COUNT_REQUESTS = 4
-        private const val TOKEN_EXPIRY_GRACE_MS = 60_000L
-    }
-}
 
 data class SpotifyImportSession(
     val isAuthenticated: Boolean = false,

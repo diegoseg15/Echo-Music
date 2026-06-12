@@ -1,5 +1,3 @@
-
-
 package iad1tya.echo.music.ui.screens
 
 import android.annotation.SuppressLint
@@ -36,6 +34,8 @@ import iad1tya.echo.music.constants.AccountNameKey
 import iad1tya.echo.music.constants.DataSyncIdKey
 import iad1tya.echo.music.constants.InnerTubeCookieKey
 import iad1tya.echo.music.constants.VisitorDataKey
+import iad1tya.echo.music.security.SecureAuthStore
+import iad1tya.echo.music.security.WebAuthCookieCleaner
 import iad1tya.echo.music.ui.component.IconButton
 import iad1tya.echo.music.ui.utils.backToMain
 import iad1tya.echo.music.utils.rememberPreference
@@ -53,9 +53,25 @@ fun LoginScreen(
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
-    var visitorData by rememberPreference(VisitorDataKey, "")
-    var dataSyncId by rememberPreference(DataSyncIdKey, "")
-    var innerTubeCookie by rememberPreference(InnerTubeCookieKey, "")
+
+    /*
+     * These values are session secrets. They must not be written directly to DataStore.
+     * They live only in memory during login and are persisted through SecureAuthStore
+     * after YouTube validates the session.
+     */
+    var visitorData by remember { mutableStateOf("") }
+    var dataSyncId by remember { mutableStateOf("") }
+    var innerTubeCookie by remember { mutableStateOf("") }
+
+    /*
+     * These markers keep compatibility with existing screens that only check
+     * whether the user is logged in through rememberPreference(...).isNotEmpty().
+     * The real cookie/session values are stored encrypted in SecureAuthStore.
+     */
+    var visitorDataMarker by rememberPreference(VisitorDataKey, "")
+    var dataSyncIdMarker by rememberPreference(DataSyncIdKey, "")
+    var innerTubeCookieMarker by rememberPreference(InnerTubeCookieKey, "")
+
     var accountName by rememberPreference(AccountNameKey, "")
     var accountEmail by rememberPreference(AccountEmailKey, "")
     var accountChannelHandle by rememberPreference(AccountChannelHandleKey, "")
@@ -75,14 +91,19 @@ fun LoginScreen(
                         loadUrl("javascript:Android.onRetrieveDataSyncId(window.yt.config_.DATASYNC_ID)")
 
                         if (url?.startsWith("https://music.youtube.com") == true && !hasCompletedLogin) {
-                            innerTubeCookie = CookieManager.getInstance().getCookie(url)
+                            val cookie = CookieManager.getInstance().getCookie(url).orEmpty()
+
+                            if (cookie.isBlank()) {
+                                Timber.w("Login: Music YouTube cookie is empty")
+                                return
+                            }
+
+                            innerTubeCookie = cookie
                             hasCompletedLogin = true
 
                             coroutineScope.launch {
-                                
                                 delay(500)
 
-                                
                                 YouTube.cookie = innerTubeCookie
                                 YouTube.dataSyncId = dataSyncId
                                 YouTube.visitorData = visitorData
@@ -94,9 +115,28 @@ fun LoginScreen(
                                     accountEmail = it.email.orEmpty()
                                     accountChannelHandle = it.channelHandle.orEmpty()
 
+                                    SecureAuthStore.put(
+                                        context,
+                                        SecureAuthStore.YOUTUBE_COOKIE,
+                                        innerTubeCookie,
+                                    )
+                                    SecureAuthStore.put(
+                                        context,
+                                        SecureAuthStore.YOUTUBE_VISITOR_DATA,
+                                        visitorData,
+                                    )
+                                    SecureAuthStore.put(
+                                        context,
+                                        SecureAuthStore.YOUTUBE_DATA_SYNC_ID,
+                                        dataSyncId,
+                                    )
+
+                                    innerTubeCookieMarker = SecureAuthStore.STORED_MARKER
+                                    visitorDataMarker = SecureAuthStore.STORED_MARKER
+                                    dataSyncIdMarker = SecureAuthStore.STORED_MARKER
+
                                     Timber.d("Login: Successfully logged in as ${it.name}, restarting app...")
 
-                                    
                                     webView?.apply {
                                         stopLoading()
                                         clearHistory()
@@ -104,44 +144,52 @@ fun LoginScreen(
                                         clearFormData()
                                     }
 
-                                    
+                                    WebAuthCookieCleaner.clearWebViewAuthState()
+
                                     val intent = context.packageManager.getLaunchIntentForPackage(context.packageName)
                                     intent?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
                                     context.startActivity(intent)
                                     Runtime.getRuntime().exit(0)
                                 }.onFailure {
                                     Timber.e(it, "Login: Authentication validation failed")
-                                    hasCompletedLogin = false 
+                                    hasCompletedLogin = false
                                     reportException(it)
                                 }
                             }
                         }
                     }
                 }
+
                 settings.apply {
                     javaScriptEnabled = true
                     setSupportZoom(true)
                     builtInZoomControls = true
                     displayZoomControls = false
                 }
-                addJavascriptInterface(object {
-                    @JavascriptInterface
-                    fun onRetrieveVisitorData(newVisitorData: String?) {
-                        if (newVisitorData != null) {
-                            visitorData = newVisitorData
+
+                addJavascriptInterface(
+                    object {
+                        @JavascriptInterface
+                        fun onRetrieveVisitorData(newVisitorData: String?) {
+                            if (!newVisitorData.isNullOrBlank()) {
+                                visitorData = newVisitorData
+                            }
                         }
-                    }
-                    @JavascriptInterface
-                    fun onRetrieveDataSyncId(newDataSyncId: String?) {
-                        if (newDataSyncId != null) {
-                            dataSyncId = newDataSyncId.substringBefore("||")
+
+                        @JavascriptInterface
+                        fun onRetrieveDataSyncId(newDataSyncId: String?) {
+                            if (!newDataSyncId.isNullOrBlank()) {
+                                dataSyncId = newDataSyncId.substringBefore("||")
+                            }
                         }
-                    }
-                }, "Android")
+                    },
+                    "Android",
+                )
+
                 webView = this
                 loadUrl("https://accounts.google.com/ServiceLogin?continue=https%3A%2F%2Fmusic.youtube.com")
             }
-        }
+        },
     )
 
     TopAppBar(
@@ -149,14 +197,14 @@ fun LoginScreen(
         navigationIcon = {
             IconButton(
                 onClick = navController::navigateUp,
-                onLongClick = navController::backToMain
+                onLongClick = navController::backToMain,
             ) {
                 Icon(
                     painterResource(R.drawable.arrow_back),
-                    contentDescription = null
+                    contentDescription = null,
                 )
             }
-        }
+        },
     )
 
     BackHandler(enabled = webView?.canGoBack() == true) {
