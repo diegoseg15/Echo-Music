@@ -1816,17 +1816,7 @@ class MusicService :
     override fun onPlaybackStateChanged(
         @Player.State playbackState: Int,
     ) {
-        
-        if (playbackState == Player.STATE_ENDED) {
-            val repeatMode = runBlocking { dataStore.get(RepeatModeKey, REPEAT_MODE_OFF) }
-            if (repeatMode == REPEAT_MODE_ALL && player.mediaItemCount > 0) {
-                player.seekTo(0, 0)
-                player.prepare()
-                player.play()
-            }
-        }
-
-        
+                
         if (dataStore.get(PersistentQueueKey, true) && !isSilenceSkipping) {
             saveQueueToDisk()
         }
