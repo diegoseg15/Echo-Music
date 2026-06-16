@@ -55,7 +55,7 @@ fun getAllSearchableSettings(): List<Triple<String, String, String>> {
             Triple(stringResource(R.string.audio_offload), "Player and audio", "settings/player"),
             Triple(stringResource(R.string.audio_offload_description), "Player and audio", "settings/player"),
             Triple(stringResource(R.string.audio_offload_disabled_by_crossfade), "Player and audio", "settings/player"),
-            Triple(stringResource(R.string.audio_quality), "Player and audio", "settings/player"),
+            Triple(stringResource(R.string.audio_source), "Player and audio", "settings/player"),
             Triple(stringResource(R.string.auto_download_on_like), "Player and audio", "settings/player"),
             Triple(stringResource(R.string.auto_download_on_like_desc), "Player and audio", "settings/player"),
             Triple(stringResource(R.string.auto_load_more), "Player and audio", "settings/player"),

@@ -778,7 +778,7 @@ fun AudioQualitySelector(context: Context) {
         modifier = Modifier.fillMaxWidth()
     ) {
         Text(
-            text = stringResource(R.string.audio_quality_title),
+            text = stringResource(R.string.audio_source),
             style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier
@@ -787,10 +787,11 @@ fun AudioQualitySelector(context: Context) {
         )
 
         val options = listOf(
-            "Opus",
-            "320 kbps",
-            "Lossless"
+            stringResource(R.string.audio_source_youtube_opus),
+            stringResource(R.string.audio_source_saavn),
+            stringResource(R.string.audio_source_qobuz_lossless),
         )
+
         val selectedIndex = when (audioQuality) {
             AudioQuality.SAAVN -> 1
             AudioQuality.LOSSLESS -> 2
@@ -858,9 +859,9 @@ fun DownloadQualitySelector() {
         )
 
         val options = listOf(
-            "Opus",
-            "320 kbps",
-            "Lossless"
+            stringResource(R.string.audio_source_youtube_opus),
+            stringResource(R.string.audio_source_saavn),
+            stringResource(R.string.audio_source_qobuz_lossless),
         )
         val selectedIndex = when (downloadQuality) {
             iad1tya.echo.music.constants.DownloadQuality.SAAVN -> 1
