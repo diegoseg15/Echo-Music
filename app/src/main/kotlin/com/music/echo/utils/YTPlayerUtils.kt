@@ -23,6 +23,8 @@ import com.music.innertube.models.YouTubeClient.Companion.WEB_CREATOR
 import com.music.innertube.models.YouTubeClient.Companion.WEB_REMIX
 import com.music.innertube.models.response.PlayerResponse
 import iad1tya.echo.music.constants.AudioQuality
+import iad1tya.echo.music.constants.PlaybackAudioQualityProfile
+import iad1tya.echo.music.playback.PlaybackQualityResolver
 import iad1tya.echo.music.utils.BotDetectionMitigator
 import iad1tya.echo.music.utils.PlaybackLogLevel
 import iad1tya.echo.music.utils.PlaybackLogManager
@@ -135,6 +137,16 @@ object YTPlayerUtils {
             context?.let {
                 it.dataStore.data.first()[iad1tya.echo.music.constants.ShowAudioFallbackToastKey]
             } ?: true
+
+        val effectivePlaybackQualityProfile =
+            PlaybackQualityResolver.resolve(
+                context = context,
+                connectivityManager = connectivityManager,
+            )
+
+        Timber
+            .tag(logTag)
+            .d("Effective playback quality profile: $effectivePlaybackQualityProfile")
 
         var losslessFailed = false
         if (audioQuality == AudioQuality.LOSSLESS) {
@@ -437,7 +449,14 @@ object YTPlayerUtils {
             }
         }
 
-        val firstAttempt = resolvePlaybackData(videoId, playlistId, audioQuality, connectivityManager)
+        val firstAttempt =
+            resolvePlaybackData(
+                videoId,
+                playlistId,
+                audioQuality,
+                connectivityManager,
+                effectivePlaybackQualityProfile,
+            )
 
         if (firstAttempt.isFailure && YouTube.cookie == null) {
             Timber.tag(TAG).w("Playback failed for guest. Rotating session and retrying...")
@@ -447,7 +466,14 @@ object YTPlayerUtils {
                 "Triggering bot detection mitigation (rotating guest session)",
             )
             BotDetectionMitigator.rotateGuestSession()
-            val retryResult = resolvePlaybackData(videoId, playlistId, audioQuality, connectivityManager)
+            val retryResult =
+                resolvePlaybackData(
+                    videoId,
+                    playlistId,
+                    audioQuality,
+                    connectivityManager,
+                    effectivePlaybackQualityProfile,
+                )
             retryResult.onSuccess { BotDetectionMitigator.notifyPlaybackSuccess() }
             return retryResult
         }
@@ -461,6 +487,7 @@ object YTPlayerUtils {
         playlistId: String? = null,
         audioQuality: AudioQuality,
         connectivityManager: ConnectivityManager,
+        playbackQualityProfile: PlaybackAudioQualityProfile,
     ): Result<PlaybackData> =
         runCatching {
             Timber.tag(logTag).d("Fetching player response for videoId: $videoId, playlistId: $playlistId")
@@ -681,9 +708,10 @@ object YTPlayerUtils {
 
                     format =
                         findFormat(
-                            responseToUse,
+                            streamPlayerResponse,
                             audioQuality,
                             connectivityManager,
+                            playbackQualityProfile,
                         )
 
                     if (format == null) {
@@ -892,15 +920,21 @@ object YTPlayerUtils {
         playerResponse: PlayerResponse,
         audioQuality: AudioQuality,
         connectivityManager: ConnectivityManager,
+        playbackQualityProfile: PlaybackAudioQualityProfile,
     ): PlayerResponse.StreamingData.Format? {
         val isMetered = connectivityManager.isActiveNetworkMetered
 
         Timber
             .tag(logTag)
-            .d("Finding format with audioQuality: $audioQuality, network metered: $isMetered")
+            .d(
+                "Finding format with audioQuality=$audioQuality, " +
+                    "profile=$playbackQualityProfile, " +
+                    "networkMetered=$isMetered",
+            )
 
         val formats =
-            playerResponse.streamingData
+            playerResponse
+                .streamingData
                 ?.adaptiveFormats
                 ?.filter { it.isAudio && it.isOriginal }
                 .orEmpty()
@@ -929,53 +963,68 @@ object YTPlayerUtils {
             return -distance
         }
 
+        fun bestAacNear(targetBitrate: Int): PlayerResponse.StreamingData.Format? =
+            formats
+                .filter { it.isAacMp4() }
+                .maxByOrNull { it.scoreNear(targetBitrate) }
+
+        fun bestAnyNear(targetBitrate: Int): PlayerResponse.StreamingData.Format? = formats.maxByOrNull { it.scoreNear(targetBitrate) }
+
+        fun bestAac(): PlayerResponse.StreamingData.Format? =
+            formats
+                .filter { it.isAacMp4() }
+                .maxByOrNull { it.bitrate }
+
+        fun bestOpus(): PlayerResponse.StreamingData.Format? =
+            formats
+                .filter { it.isWebmOpus() }
+                .maxByOrNull { it.bitrate }
+
         val selectedFormat =
-            when {
-            /*
-             * Mobile data:
-             * Prefer AAC/MP4 around 128-160 kbps.
-             * This is usually more compatible and starts faster.
-             */
-                isMetered -> {
-                    formats
-                        .filter { it.isAacMp4() }
-                        .maxByOrNull { it.scoreNear(160_000) }
-                        ?: formats.maxByOrNull { it.scoreNear(160_000) }
+            when (playbackQualityProfile) {
+                PlaybackAudioQualityProfile.LOW -> {
+                    bestAacNear(96_000)
+                        ?: bestAacNear(128_000)
+                        ?: bestAnyNear(96_000)
                 }
 
-            /*
-             * User selected OPUS:
-             * Prefer WebM/Opus on WiFi, but keep AAC/MP4 fallback.
-             */
-                audioQuality == AudioQuality.OPUS -> {
-                    formats
-                        .filter { it.isWebmOpus() }
-                        .maxByOrNull { it.bitrate }
-                        ?: formats
-                            .filter { it.isAacMp4() }
-                            .maxByOrNull { it.bitrate }
-                        ?: formats.maxByOrNull { it.bitrate }
+                PlaybackAudioQualityProfile.MEDIUM -> {
+                    bestAacNear(160_000)
+                        ?: bestAacNear(128_000)
+                        ?: bestAnyNear(160_000)
                 }
 
-            /*
-             * If Saavn/Lossless fallback reaches YouTube,
-             * prefer AAC/MP4 for stability instead of forcing WebM/Opus.
-             */
-                audioQuality == AudioQuality.SAAVN || audioQuality == AudioQuality.LOSSLESS -> {
-                    formats
-                        .filter { it.isAacMp4() }
-                        .maxByOrNull { it.bitrate }
-                        ?: formats
-                            .filter { it.isWebmOpus() }
-                            .maxByOrNull { it.bitrate }
-                        ?: formats.maxByOrNull { it.bitrate }
+                PlaybackAudioQualityProfile.HIGH -> {
+                    when {
+                        audioQuality == AudioQuality.OPUS && !isMetered -> {
+                            bestOpus()
+                                ?: bestAac()
+                                ?: formats.maxByOrNull { it.bitrate }
+                        }
+
+                        else -> {
+                            bestAac()
+                                ?: bestOpus()
+                                ?: formats.maxByOrNull { it.bitrate }
+                        }
+                    }
                 }
 
-                else -> {
-                    formats
-                        .filter { it.isAacMp4() }
-                        .maxByOrNull { it.bitrate }
-                        ?: formats.maxByOrNull { it.bitrate }
+                PlaybackAudioQualityProfile.AUTO -> {
+                    if (isMetered) {
+                        bestAacNear(160_000)
+                            ?: bestAnyNear(160_000)
+                    } else {
+                        if (audioQuality == AudioQuality.OPUS) {
+                            bestOpus()
+                                ?: bestAac()
+                                ?: formats.maxByOrNull { it.bitrate }
+                        } else {
+                            bestAac()
+                                ?: bestOpus()
+                                ?: formats.maxByOrNull { it.bitrate }
+                        }
+                    }
                 }
             }
 
@@ -984,11 +1033,12 @@ object YTPlayerUtils {
                 .tag(logTag)
                 .d(
                     "Selected format: ${selectedFormat.mimeType}, " +
-                        "bitrate: ${selectedFormat.bitrate}, " +
-                        "metered: $isMetered",
+                        "bitrate=${selectedFormat.bitrate}, " +
+                        "profile=$playbackQualityProfile, " +
+                        "metered=$isMetered",
                 )
         } else {
-            Timber.tag(logTag).d("No suitable audio format found after scoring")
+            Timber.tag(logTag).d("No suitable audio format found after profile scoring")
         }
 
         return selectedFormat

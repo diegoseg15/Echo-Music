@@ -1,0 +1,140 @@
+{
+  "items": [
+    {
+      "name": "audio_source",
+      "values": {
+        "values": "Audio source",
+        "values-es": "Fuente de audio",
+        "values-es-rUS": "Fuente de audio"
+      }
+    },
+    {
+      "name": "audio_source_youtube_opus",
+      "values": {
+        "values": "YouTube Music / Opus",
+        "values-es": "YouTube Music / Opus",
+        "values-es-rUS": "YouTube Music / Opus"
+      }
+    },
+    {
+      "name": "audio_source_saavn",
+      "values": {
+        "values": "Saavn (320 kbps)",
+        "values-es": "Saavn (320 kbps)",
+        "values-es-rUS": "Saavn (320 kbps)"
+      }
+    },
+    {
+      "name": "audio_source_qobuz_lossless",
+      "values": {
+        "values": "Qobuz (Lossless)",
+        "values-es": "Qobuz (sin pérdida)",
+        "values-es-rUS": "Qobuz (sin pérdida)"
+      }
+    },
+    {
+      "name": "playback_quality_wifi",
+      "values": {
+        "values": "Wi-Fi quality",
+        "values-es": "Calidad con Wi-Fi",
+        "values-es-rUS": "Calidad con Wi-Fi"
+      }
+    },
+    {
+      "name": "playback_quality_mobile",
+      "values": {
+        "values": "Mobile data quality",
+        "values-es": "Calidad con datos móviles",
+        "values-es-rUS": "Calidad con datos móviles"
+      }
+    },
+    {
+      "name": "playback_quality_battery",
+      "values": {
+        "values": "Battery saver quality",
+        "values-es": "Calidad con ahorro de batería",
+        "values-es-rUS": "Calidad con ahorro de batería"
+      }
+    },
+    {
+      "name": "playback_quality_auto",
+      "values": {
+        "values": "Auto",
+        "values-es": "Automática",
+        "values-es-rUS": "Automática"
+      }
+    },
+    {
+      "name": "playback_quality_high",
+      "values": {
+        "values": "High",
+        "values-es": "Alta",
+        "values-es-rUS": "Alta"
+      }
+    },
+    {
+      "name": "playback_quality_medium",
+      "values": {
+        "values": "Medium",
+        "values-es": "Media",
+        "values-es-rUS": "Media"
+      }
+    },
+    {
+      "name": "playback_quality_low",
+      "values": {
+        "values": "Low",
+        "values-es": "Baja",
+        "values-es-rUS": "Baja"
+      }
+    },
+    {
+      "name": "audio_fallback_notifications_title",
+      "values": {
+        "values": "Show audio fallback notifications",
+        "values-es": "Mostrar avisos de cambio de calidad",
+        "values-es-rUS": "Mostrar avisos de cambio de calidad"
+      }
+    },
+    {
+      "name": "audio_fallback_notifications_description",
+      "values": {
+        "values": "Show a toast notification when falling back to a lower stream quality",
+        "values-es": "Muestra una notificación cuando la app cambia a una calidad de audio inferior",
+        "values-es-rUS": "Muestra una notificación cuando la app cambia a una calidad de audio inferior"
+      }
+    },
+    {
+      "name": "enable_saavn_audio_title",
+      "values": {
+        "values": "Enable Saavn (320 kbps)?",
+        "values-es": "¿Activar Saavn (320 kbps)?",
+        "values-es-rUS": "¿Activar Saavn (320 kbps)?"
+      }
+    },
+    {
+      "name": "enable_saavn_audio_message",
+      "values": {
+        "values": "This feature uses JioSaavn and may not always work. If Saavn playback fails, the app will automatically fall back to YouTube Music's Opus stream.",
+        "values-es": "Esta función usa JioSaavn y puede no funcionar siempre. Si Saavn falla, la app volverá automáticamente al stream Opus de YouTube Music.",
+        "values-es-rUS": "Esta función usa JioSaavn y puede no funcionar siempre. Si Saavn falla, la app volverá automáticamente al stream Opus de YouTube Music."
+      }
+    },
+    {
+      "name": "crossfade_disabled_for_lossless",
+      "values": {
+        "values": "Crossfade has been turned off for Lossless playback",
+        "values-es": "El crossfade se desactivó para la reproducción sin pérdida",
+        "values-es-rUS": "El crossfade se desactivó para la reproducción sin pérdida"
+      }
+    },
+    {
+      "name": "crossfade_disabled_while_lossless",
+      "values": {
+        "values": "Crossfade is disabled while using Qobuz (Lossless)",
+        "values-es": "El crossfade está desactivado mientras usas Qobuz sin pérdida",
+        "values-es-rUS": "El crossfade está desactivado mientras usas Qobuz sin pérdida"
+      }
+    }
+  ]
+}

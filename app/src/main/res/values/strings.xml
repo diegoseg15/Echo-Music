@@ -420,4 +420,21 @@
     <string name="spotify_clear_selection">Clear</string>
     <string name="spotify_account">Spotify account</string>
     <string name="spotify_waiting_for_login">Waiting for Spotify login</string>
+    <string name="audio_source">Audio source</string>
+    <string name="audio_source_youtube_opus">YouTube Music / Opus</string>
+    <string name="audio_source_saavn">Saavn (320 kbps)</string>
+    <string name="audio_source_qobuz_lossless">Qobuz (Lossless)</string>
+    <string name="playback_quality_wifi">Wi-Fi quality</string>
+    <string name="playback_quality_mobile">Mobile data quality</string>
+    <string name="playback_quality_battery">Battery saver quality</string>
+    <string name="playback_quality_auto">Auto</string>
+    <string name="playback_quality_high">High</string>
+    <string name="playback_quality_medium">Medium</string>
+    <string name="playback_quality_low">Low</string>
+    <string name="audio_fallback_notifications_title">Show audio fallback notifications</string>
+    <string name="audio_fallback_notifications_description">Show a toast notification when falling back to a lower stream quality</string>
+    <string name="enable_saavn_audio_title">Enable Saavn (320 kbps)?</string>
+    <string name="enable_saavn_audio_message">This feature uses JioSaavn and may not always work. If Saavn playback fails, the app will automatically fall back to YouTube Music\'s Opus stream.</string>
+    <string name="crossfade_disabled_for_lossless">Crossfade has been turned off for Lossless playback</string>
+    <string name="crossfade_disabled_while_lossless">Crossfade is disabled while using Qobuz (Lossless)</string>
 </resources>
