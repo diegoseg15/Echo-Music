@@ -15,6 +15,7 @@ import com.music.innertube.models.YTItem
 import com.music.innertube.models.filterExplicit
 import com.music.innertube.models.filterVideoSongs
 import com.music.innertube.models.filterYoutubeShorts
+import com.music.innertube.pages.ChartsPage
 import com.music.innertube.pages.ExplorePage
 import com.music.innertube.pages.HomePage
 import com.music.innertube.utils.completed
@@ -114,9 +115,15 @@ constructor(
   val accountPlaylists = MutableStateFlow<List<PlaylistItem>?>(null)
   val homePage = MutableStateFlow<HomePage?>(null)
   val explorePage = MutableStateFlow<ExplorePage?>(null)
+  val chartsPage = MutableStateFlow<ChartsPage?>(null)
   val communityPlaylists = MutableStateFlow<List<CommunityPlaylistItem>?>(null)
   val selectedChip = MutableStateFlow<HomePage.Chip?>(null)
   private val previousHomePage = MutableStateFlow<HomePage?>(null)
+
+  val recentlyPlayedSongs: StateFlow<List<Song>> =
+    database.recentlyPlayedSongs(limit = 12)
+      .flowOn(Dispatchers.IO)
+      .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
   private val carouselAccountSongs = MutableStateFlow<List<SongItem>>(emptyList())
   private val accountPlaylistMutex = Mutex()
@@ -738,6 +745,11 @@ constructor(
             explorePage.value =
               page.copy(newReleaseAlbums = page.newReleaseAlbums.filterExplicit(hideExplicit))
           }
+          .onFailure { reportException(it) }
+      }
+      launch(Dispatchers.IO) {
+        YouTube.getChartsPage()
+          .onSuccess { chartsPage.value = it }
           .onFailure { reportException(it) }
       }
       if (YouTube.cookie != null) {
