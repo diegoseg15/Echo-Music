@@ -64,7 +64,7 @@ fun AboutScreen(
   LaunchedEffect(Unit) {
     withContext(Dispatchers.IO) {
       try {
-        val url = java.net.URL("https://api.github.com/repos/EchoMusicApp/Echo-Music/contributors")
+        val url = java.net.URL("https://api.github.com/repos/diegoseg15/Echo-Music/contributors")
         val json = url.openStream().bufferedReader().use { it.readText() }
         val array = JSONArray(json)
         val list = mutableListOf<Contributor>()
@@ -166,26 +166,26 @@ fun AboutScreen(
 
       item {
         Material3SettingsGroup(
-          title = "Developer",
+          title = "Desarrollador",
           items =
             listOf(
               Material3SettingsItem(
                 icon = painterResource(R.drawable.website),
-                title = { Text("Website") },
-                description = { Text("iad1tya.cyou") },
-                onClick = { uriHandler.openUri("https://iad1tya.cyou") }
+                title = { Text("Sitio Web") },
+                description = { Text("https://portfolio-77060.web.app/") },
+                onClick = { uriHandler.openUri("https://portfolio-77060.web.app/") }
               ),
               Material3SettingsItem(
                 icon = painterResource(R.drawable.ic_instagram_new),
-                title = { Text("Instagram") },
-                description = { Text("@iad1tya") },
-                onClick = { uriHandler.openUri("https://instagram.com/iad1tya") }
+                title = { Text("Redes Sociales") },
+                description = { Text("@diegoseg15") },
+                onClick = { uriHandler.openUri("https://github.com/diegoseg15") }
               ),
               Material3SettingsItem(
-                icon = painterResource(R.drawable.ic_x_new),
-                title = { Text("X (Twitter)") },
-                description = { Text("@xad1tya") },
-                onClick = { uriHandler.openUri("https://x.com/xad1tya") }
+                icon = painterResource(R.drawable.github),
+                title = { Text("GitHub") },
+                description = { Text("@diegoseg15") },
+                onClick = { uriHandler.openUri("https://github.com/diegoseg15") }
               )
             )
         )
@@ -193,30 +193,14 @@ fun AboutScreen(
 
       item {
         Material3SettingsGroup(
-          title = "Support",
+          title = "Repositorio",
           items =
             listOf(
               Material3SettingsItem(
-                icon = painterResource(R.drawable.coffee),
-                title = { Text("Buy Me a Coffee") },
-                description = { Text("buymeacoffee.com/iad1tya") },
-                onClick = { uriHandler.openUri("https://buymeacoffee.com/iad1tya") }
-              ),
-              Material3SettingsItem(
-                icon = painterResource(R.drawable.ic_patreon_new),
-                title = { Text("Patreon") },
-                description = { Text("patreon.com/cw/iad1tya") },
-                onClick = { uriHandler.openUri("https://www.patreon.com/cw/iad1tya") }
-              ),
-              Material3SettingsItem(
-                icon = painterResource(R.drawable.upi_new),
-                title = { Text("UPI") },
-                description = { Text("iad1tya@upi") },
-                onClick = {
-                  uriHandler.openUri(
-                    "https://intradeus.github.io/http-protocol-redirector/?r=upi://pay?pa=iad1tya@upi&pn=Aditya%20Yadav&am=&tn=Thank%20You%20so%20much%20for%20this%20support"
-                  )
-                }
+                icon = painterResource(R.drawable.github),
+                title = { Text("Código Fuente") },
+                description = { Text("diegoseg15/Echo-Music") },
+                onClick = { uriHandler.openUri("https://github.com/diegoseg15/Echo-Music") }
               )
             )
         )
@@ -224,7 +208,22 @@ fun AboutScreen(
 
       item {
         Material3SettingsGroup(
-          title = "Community",
+          title = "Agradecimientos y Base Original",
+          items =
+            listOf(
+              Material3SettingsItem(
+                icon = painterResource(R.drawable.github),
+                title = { Text("iad1tya") },
+                description = { Text("Creador original de Echo Music") },
+                onClick = { uriHandler.openUri("https://github.com/iad1tya") }
+              )
+            )
+        )
+      }
+
+      item {
+        Material3SettingsGroup(
+          title = "Comunidad",
           items =
             listOf(
               Material3SettingsItem(
@@ -236,31 +235,6 @@ fun AboutScreen(
             )
         )
       }
-
-      /* item {
-          AboutSectionCard(title = "App") {
-              AboutActionRow(
-                  icon = painterResource(R.drawable.github),
-                  title = "GitHub",
-                  subtitle = "EchoMusicApp/Echo-Music",
-                  onClick = { uriHandler.openUri("https://github.com/EchoMusicApp/Echo-Music") },
-              )
-              AboutDivider()
-              AboutActionRow(
-                  icon = painterResource(R.drawable.ic_discord_new),
-                  title = "Discord",
-                  subtitle = "discord.gg/EcfV3AxH5c",
-                  onClick = { uriHandler.openUri("https://discord.gg/EcfV3AxH5c") },
-              )
-              AboutDivider()
-              AboutActionRow(
-                  icon = painterResource(R.drawable.ic_telegram_new),
-                  title = "Telegram",
-                  subtitle = "t.me/EchoMusicApp",
-                  onClick = { uriHandler.openUri("https://t.me/EchoMusicApp") },
-              )
-          }
-      } */
 
     }
   }
@@ -323,7 +297,7 @@ private fun AboutAppCard() {
         )
       } else {
         coil3.compose.AsyncImage(
-          model = "https://avatars.githubusercontent.com/u/147871321?v=4",
+          model = "https://github.com/diegoseg15.png",
           contentDescription = null,
           modifier =
             Modifier.fillMaxSize().graphicsLayer { rotationY = 180f }, // Un-flip the backside image
@@ -335,11 +309,33 @@ private fun AboutAppCard() {
     Spacer(Modifier.height(4.dp))
 
     Text(
-      text = if (rotation <= 90f) "Echo Music" else "Developed by Aditya",
-      style = MaterialTheme.typography.titleLarge,
+      text = if (rotation <= 90f) "VYLUNE" else "Desarrollado por diegoseg15",
+      style = MaterialTheme.typography.headlineSmall,
       fontWeight = FontWeight.Bold,
       color = MaterialTheme.colorScheme.onSurface,
     )
+
+    Text(
+      text = "Your music. Your universe.",
+      style = MaterialTheme.typography.titleMedium,
+      fontWeight = FontWeight.SemiBold,
+      color = MaterialTheme.colorScheme.primary,
+    )
+
+    Surface(
+      shape = RoundedCornerShape(12.dp),
+      color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+      modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+    ) {
+      Text(
+        text = "Una marca concebida para una experiencia musical moderna, personal y sin interrupciones.",
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+        modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp)
+      )
+    }
+
     Row(
       horizontalArrangement = Arrangement.spacedBy(6.dp),
       verticalAlignment = Alignment.CenterVertically,

@@ -461,7 +461,7 @@
     <string name="listen_together_smart_resync">Resincronización de red inteligente</string>
     <string name="listen_together_smart_resync_desc">Sincroniza de nuevo con el anfitrión automáticamente tras un corte de conexión</string>
     <string name="spotify_import_title">Importar desde Spotify</string>
-    <string name="spotify_import_desc">Conecta Spotify, elige tus listas de reproducción y refléjalas en listas locales de Echo Music.</string>
+    <string name="spotify_import_desc">Conecta Spotify, elige tus listas de reproducción y refléjalas en listas locales de VYLUNE.</string>
     <string name="spotify_connect">Conectar Spotify</string>
     <string name="spotify_refresh">Actualizar biblioteca de Spotify</string>
     <string name="spotify_select_sources">Seleccionar listas de Spotify</string>
@@ -506,7 +506,7 @@
     <string name="recognition_notification_processing">Identificando…</string>
     <string name="recognition_notification_no_match">No se encontraron coincidencias</string>
     <string name="recognition_notification_failed">Error en el reconocimiento</string>
-    <string name="listen_on_echo_music">Escuchar en Echo Music</string>
+    <string name="listen_on_echo_music">Escuchar en VYLUNE</string>
     <string name="qs_tile_music_recognizer">Reconocer música</string>
     <string name="listenbrainz_scrobbling">Scrobbling en ListenBrainz</string>
     <string name="listenbrainz_scrobbling_description">Envía automáticamente las pistas que escuchas a ListenBrainz</string>
