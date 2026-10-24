@@ -36,6 +36,8 @@ import echo.music.iad1tya.constants.InnerTubeCookieKey
 import echo.music.iad1tya.constants.SavedAccountsKey
 import echo.music.iad1tya.constants.VisitorDataKey
 import echo.music.iad1tya.models.AccountData
+import echo.music.iad1tya.security.SecureAuthStore
+import echo.music.iad1tya.security.WebAuthCookieCleaner
 import echo.music.iad1tya.ui.component.IconButton
 import echo.music.iad1tya.ui.utils.backToMain
 import echo.music.iad1tya.utils.rememberPreference
@@ -56,9 +58,18 @@ fun LoginScreen(
 ) {
   val context = LocalContext.current
   val coroutineScope = rememberCoroutineScope()
-  var visitorData by rememberPreference(VisitorDataKey, "")
-  var dataSyncId by rememberPreference(DataSyncIdKey, "")
-  var innerTubeCookie by rememberPreference(InnerTubeCookieKey, "")
+  /*
+   * Session secrets live only in memory during login and are persisted through
+   * SecureAuthStore after YouTube validates the session.
+   */
+  var visitorData by remember { mutableStateOf("") }
+  var dataSyncId by remember { mutableStateOf("") }
+  var innerTubeCookie by remember { mutableStateOf("") }
+
+  var visitorDataMarker by rememberPreference(VisitorDataKey, "")
+  var dataSyncIdMarker by rememberPreference(DataSyncIdKey, "")
+  var innerTubeCookieMarker by rememberPreference(InnerTubeCookieKey, "")
+
   var accountName by rememberPreference(AccountNameKey, "")
   var accountEmail by rememberPreference(AccountEmailKey, "")
   var accountChannelHandle by rememberPreference(AccountChannelHandleKey, "")
@@ -78,7 +89,13 @@ fun LoginScreen(
               loadUrl("javascript:Android.onRetrieveDataSyncId(window.yt.config_.DATASYNC_ID)")
 
               if (url?.startsWith("https://music.youtube.com") == true && !hasCompletedLogin) {
-                innerTubeCookie = CookieManager.getInstance().getCookie(url)
+                val cookie = CookieManager.getInstance().getCookie(url).orEmpty()
+                if (cookie.isBlank()) {
+                  Timber.w("Login: Music YouTube cookie is empty")
+                  return
+                }
+
+                innerTubeCookie = cookie
                 hasCompletedLogin = true
 
                 coroutineScope.launch {
@@ -95,6 +112,26 @@ fun LoginScreen(
                       accountName = it.name
                       accountEmail = it.email.orEmpty()
                       accountChannelHandle = it.channelHandle.orEmpty()
+
+                      SecureAuthStore.put(
+                        context,
+                        SecureAuthStore.YOUTUBE_COOKIE,
+                        innerTubeCookie,
+                      )
+                      SecureAuthStore.put(
+                        context,
+                        SecureAuthStore.YOUTUBE_VISITOR_DATA,
+                        visitorData,
+                      )
+                      SecureAuthStore.put(
+                        context,
+                        SecureAuthStore.YOUTUBE_DATA_SYNC_ID,
+                        dataSyncId,
+                      )
+
+                      innerTubeCookieMarker = SecureAuthStore.STORED_MARKER
+                      visitorDataMarker = SecureAuthStore.STORED_MARKER
+                      dataSyncIdMarker = SecureAuthStore.STORED_MARKER
 
                       val newAccount =
                         AccountData(
@@ -125,6 +162,8 @@ fun LoginScreen(
                         clearCache(true)
                         clearFormData()
                       }
+
+                      WebAuthCookieCleaner.clearWebViewAuthState()
 
                       val intent =
                         context.packageManager.getLaunchIntentForPackage(context.packageName)

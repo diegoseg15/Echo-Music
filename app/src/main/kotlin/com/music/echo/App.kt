@@ -26,6 +26,8 @@ import echo.music.iad1tya.constants.*
 import echo.music.iad1tya.di.ApplicationScope
 import echo.music.iad1tya.extensions.toEnum
 import echo.music.iad1tya.extensions.toInetSocketAddress
+import echo.music.iad1tya.security.SecureAuthStore
+import echo.music.iad1tya.security.WebAuthCookieCleaner
 import echo.music.iad1tya.utils.AppContextHolder
 import echo.music.iad1tya.utils.CrashHandler
 import echo.music.iad1tya.utils.YouTubeThumbnailFallbackInterceptor
@@ -213,6 +215,11 @@ class App : Application(), SingletonImageLoader.Factory {
     nm.createNotificationChannel(channel)
   }
 
+  private fun normalizeDataSyncId(value: String): String =
+    value.takeIf { !it.contains("||") }
+      ?: value.takeIf { it.endsWith("||") }?.substringBefore("||")
+      ?: value.substringAfter("||")
+
   private fun observeSettingsChanges() {
     applicationScope.launch(Dispatchers.IO) {
       dataStore.data
@@ -224,12 +231,39 @@ class App : Application(), SingletonImageLoader.Factory {
           })
         }
         .distinctUntilChanged()
-        .collect { visitorData ->
+        .collect { storedVisitorData ->
           YouTube.visitorData =
-            visitorData?.takeIf { it != "null" }
-              ?: YouTube.visitorData().getOrNull()?.also { newVisitorData ->
-                dataStore.edit { settings -> settings[VisitorDataKey] = newVisitorData }
+            when {
+              storedVisitorData == SecureAuthStore.STORED_MARKER -> {
+                SecureAuthStore.get(
+                  this@App,
+                  SecureAuthStore.YOUTUBE_VISITOR_DATA,
+                )?.takeIf { it.isNotBlank() && it != "null" }
               }
+              !storedVisitorData.isNullOrBlank() && storedVisitorData != "null" -> {
+                SecureAuthStore.put(
+                  this@App,
+                  SecureAuthStore.YOUTUBE_VISITOR_DATA,
+                  storedVisitorData,
+                )
+                dataStore.edit { settings ->
+                  settings[VisitorDataKey] = SecureAuthStore.STORED_MARKER
+                }
+                storedVisitorData
+              }
+              else -> {
+                YouTube.visitorData().getOrNull()?.also { newVisitorData ->
+                  SecureAuthStore.put(
+                    this@App,
+                    SecureAuthStore.YOUTUBE_VISITOR_DATA,
+                    newVisitorData,
+                  )
+                  dataStore.edit { settings ->
+                    settings[VisitorDataKey] = SecureAuthStore.STORED_MARKER
+                  }
+                }
+              }
+            }
         }
     }
 
@@ -248,12 +282,28 @@ class App : Application(), SingletonImageLoader.Factory {
           })
         }
         .distinctUntilChanged()
-        .collect { dataSyncId ->
+        .collect { storedDataSyncId ->
           YouTube.dataSyncId =
-            dataSyncId?.let {
-              it.takeIf { !it.contains("||") }
-                ?: it.takeIf { it.endsWith("||") }?.substringBefore("||")
-                ?: it.substringAfter("||")
+            when {
+              storedDataSyncId == SecureAuthStore.STORED_MARKER -> {
+                SecureAuthStore.get(
+                  this@App,
+                  SecureAuthStore.YOUTUBE_DATA_SYNC_ID,
+                )?.takeIf { it.isNotBlank() && it != "null" }
+              }
+              !storedDataSyncId.isNullOrBlank() && storedDataSyncId != "null" -> {
+                val normalizedDataSyncId = normalizeDataSyncId(storedDataSyncId)
+                SecureAuthStore.put(
+                  this@App,
+                  SecureAuthStore.YOUTUBE_DATA_SYNC_ID,
+                  normalizedDataSyncId,
+                )
+                dataStore.edit { settings ->
+                  settings[DataSyncIdKey] = SecureAuthStore.STORED_MARKER
+                }
+                normalizedDataSyncId
+              }
+              else -> null
             }
         }
     }
@@ -268,9 +318,35 @@ class App : Application(), SingletonImageLoader.Factory {
           })
         }
         .distinctUntilChanged()
-        .collect { cookie ->
+        .collect { storedCookie ->
+          val cookie =
+            when {
+              storedCookie == SecureAuthStore.STORED_MARKER -> {
+                SecureAuthStore.get(
+                  this@App,
+                  SecureAuthStore.YOUTUBE_COOKIE,
+                )
+              }
+              !storedCookie.isNullOrBlank() && storedCookie != "null" -> {
+                storedCookie
+              }
+              else -> null
+            }
           try {
             YouTube.cookie = cookie
+            if (!storedCookie.isNullOrBlank() &&
+                storedCookie != "null" &&
+                storedCookie != SecureAuthStore.STORED_MARKER
+            ) {
+              SecureAuthStore.put(
+                this@App,
+                SecureAuthStore.YOUTUBE_COOKIE,
+                storedCookie,
+              )
+              dataStore.edit { settings ->
+                settings[InnerTubeCookieKey] = SecureAuthStore.STORED_MARKER
+              }
+            }
           } catch (e: Exception) {
             Timber.e(e, "Could not parse cookie. Clearing existing cookie.")
             forgetAccount(this@App)
@@ -390,25 +466,27 @@ class App : Application(), SingletonImageLoader.Factory {
       }
       Timber.d("forgetAccount: DataStore preferences cleared")
 
+      Timber.d("forgetAccount: Clearing encrypted YouTube auth state")
+      SecureAuthStore.clearYouTube(context)
+
       Timber.d("forgetAccount: Clearing YouTube object auth state")
       Timber.d(
-        "forgetAccount: Before - cookie=${YouTube.cookie?.take(50)}, visitorData=${YouTube.visitorData?.take(20)}, dataSyncId=${YouTube.dataSyncId?.take(20)}"
+        "forgetAccount: Before - cookie=${YouTube.cookie?.take(50)}, " +
+          "visitorData=${YouTube.visitorData?.take(20)}, " +
+          "dataSyncId=${YouTube.dataSyncId?.take(20)}"
       )
       YouTube.cookie = null
       YouTube.visitorData = null
       YouTube.dataSyncId = null
       Timber.d(
-        "forgetAccount: After - cookie=${YouTube.cookie}, visitorData=${YouTube.visitorData}, dataSyncId=${YouTube.dataSyncId}"
+        "forgetAccount: After - cookie=${YouTube.cookie}, " +
+          "visitorData=${YouTube.visitorData}, " +
+          "dataSyncId=${YouTube.dataSyncId}"
       )
 
-      Timber.d("forgetAccount: Clearing WebView CookieManager")
+      Timber.d("forgetAccount: Clearing WebView auth state")
       withContext(Dispatchers.Main) {
-        android.webkit.CookieManager.getInstance().apply {
-          removeAllCookies { removed ->
-            Timber.d("forgetAccount: CookieManager.removeAllCookies callback: removed=$removed")
-          }
-          flush()
-        }
+        WebAuthCookieCleaner.clearWebViewAuthState()
       }
       Timber.d("forgetAccount: Logout process complete")
     }

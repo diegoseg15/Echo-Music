@@ -13,6 +13,7 @@ import echo.music.iad1tya.constants.AccountNameKey
 import echo.music.iad1tya.constants.DataSyncIdKey
 import echo.music.iad1tya.constants.InnerTubeCookieKey
 import echo.music.iad1tya.constants.VisitorDataKey
+import echo.music.iad1tya.security.SecureAuthStore
 import echo.music.iad1tya.utils.SyncUtils
 import echo.music.iad1tya.utils.dataStore
 import javax.inject.Inject
@@ -54,10 +55,30 @@ constructor(
     accountChannelHandle: String,
   ) {
     viewModelScope.launch(Dispatchers.IO) {
+      val normalizedDataSyncId = normalizeDataSyncId(dataSyncId)
+
+      SecureAuthStore.put(
+        context,
+        SecureAuthStore.YOUTUBE_COOKIE,
+        cookie,
+      )
+
+      SecureAuthStore.put(
+        context,
+        SecureAuthStore.YOUTUBE_VISITOR_DATA,
+        visitorData,
+      )
+
+      SecureAuthStore.put(
+        context,
+        SecureAuthStore.YOUTUBE_DATA_SYNC_ID,
+        normalizedDataSyncId,
+      )
+
       context.dataStore.edit { settings ->
-        settings[InnerTubeCookieKey] = cookie
-        settings[VisitorDataKey] = visitorData
-        settings[DataSyncIdKey] = dataSyncId
+        settings[InnerTubeCookieKey] = SecureAuthStore.STORED_MARKER
+        settings[VisitorDataKey] = SecureAuthStore.STORED_MARKER
+        settings[DataSyncIdKey] = SecureAuthStore.STORED_MARKER
         settings[AccountNameKey] = accountName
         settings[AccountEmailKey] = accountEmail
         settings[AccountChannelHandleKey] = accountChannelHandle
@@ -70,4 +91,9 @@ constructor(
       }
     }
   }
+
+  private fun normalizeDataSyncId(value: String): String =
+    value.takeIf { !it.contains("||") }
+      ?: value.takeIf { it.endsWith("||") }?.substringBefore("||")
+      ?: value.substringAfter("||")
 }
