@@ -43,6 +43,7 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.DataSource
 import androidx.media3.datasource.DataSpec
 import androidx.media3.datasource.DefaultDataSource
+import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.datasource.HttpDataSource
 import androidx.media3.datasource.ResolvingDataSource
 import androidx.media3.datasource.cache.CacheDataSource
@@ -60,7 +61,11 @@ import androidx.media3.exoplayer.analytics.PlaybackStatsListener
 import androidx.media3.exoplayer.audio.DefaultAudioSink
 import androidx.media3.exoplayer.audio.SilenceSkippingAudioProcessor
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
+import androidx.media3.exoplayer.source.MergingMediaSource
+import androidx.media3.exoplayer.source.ProgressiveMediaSource
 import androidx.media3.exoplayer.source.ShuffleOrder.DefaultShuffleOrder
+import echo.music.iad1tya.constants.PlaybackMediaMode
+import echo.music.iad1tya.playback.OfficialVideoResolver
 import androidx.media3.session.CommandButton
 import androidx.media3.session.MediaController
 import androidx.media3.session.MediaLibraryService
@@ -389,6 +394,157 @@ class MusicService : MediaLibraryService(), Player.Listener, PlaybackStatsListen
   val waitingForNetworkConnection = MutableStateFlow(false)
   private val isNetworkConnected = MutableStateFlow(false)
 
+  val playbackMediaMode = MutableStateFlow(PlaybackMediaMode.AUDIO)
+  val videoPlaybackLoading = MutableStateFlow(false)
+  val videoPlaybackError = MutableStateFlow<String?>(null)
+  val videoPlaybackAvailable = MutableStateFlow(false)
+  val videoPlaybackAvailabilityLoading = MutableStateFlow(false)
+
+  private var audioModeMediaItemBeforeVideo: MediaItem? = null
+  private var audioModeMediaIdBeforeVideo: String? = null
+  private val officialVideoResolver = OfficialVideoResolver()
+
+  fun switchPlaybackMediaMode(mode: PlaybackMediaMode) {
+    scope.launch {
+      when (mode) {
+        PlaybackMediaMode.AUDIO -> switchToAudioPlayback()
+        PlaybackMediaMode.VIDEO -> switchToVideoPlayback()
+      }
+    }
+  }
+
+  private suspend fun switchToVideoPlayback() {
+    if (playbackMediaMode.value == PlaybackMediaMode.VIDEO) return
+
+    val currentMediaItem = player.currentMediaItem
+    if (currentMediaItem == null) {
+      Timber.tag(TAG).w("VIDEO_MODE_SWITCH: no current media item")
+      return
+    }
+
+    val mediaId = currentMediaItem.mediaId
+    if (mediaId.isBlank()) {
+      Timber.tag(TAG).w("VIDEO_MODE_SWITCH: current media item has blank mediaId")
+      return
+    }
+
+    val currentMetadata = currentMediaItem.metadata
+    val positionMs = player.currentPosition.coerceAtLeast(0L)
+    val wasPlaying = player.playWhenReady
+
+    videoPlaybackLoading.value = true
+    videoPlaybackError.value = null
+
+    val linkedSetVideoId = currentMetadata?.setVideoId?.takeIf { it.isNotBlank() }
+    val isVideoItem = currentMetadata?.isVideoSong == true
+
+    val videoIdForMode =
+      when {
+        isVideoItem -> mediaId
+        linkedSetVideoId != null -> linkedSetVideoId
+        currentMetadata != null -> officialVideoResolver.resolveOfficialVideoIdForSong(currentMetadata)
+        else -> null
+      }
+
+    if (videoIdForMode == null) {
+      videoPlaybackLoading.value = false
+      videoPlaybackError.value = "No se encontró video oficial para esta canción"
+      playbackMediaMode.value = PlaybackMediaMode.AUDIO
+      return
+    }
+
+    val videoPlaybackResult =
+      withContext(Dispatchers.IO) {
+        echo.music.iad1tya.utils.YTPlayerUtils.playerResponseForVideoPlayback(
+          videoId = videoIdForMode,
+          playlistId = null,
+          connectivityManager = connectivityManager,
+          context = this@MusicService,
+        )
+      }
+
+    val videoPlaybackData =
+      videoPlaybackResult.getOrElse { error ->
+        videoPlaybackLoading.value = false
+        videoPlaybackError.value = error.message ?: "Video unavailable"
+        Timber.tag(TAG).e(error, "VIDEO_MODE_SWITCH: failed to resolve video playback")
+        return
+      }
+
+    val httpDataSourceFactory =
+      DefaultHttpDataSource.Factory().setUserAgent("Mozilla/5.0")
+
+    val originalTag = currentMediaItem.localConfiguration?.tag
+    val originalMediaMetadata = currentMediaItem.mediaMetadata
+
+    val audioSource =
+      ProgressiveMediaSource.Factory(httpDataSourceFactory)
+        .createMediaSource(
+          MediaItem.Builder()
+            .setUri(videoPlaybackData.audioStreamUrl)
+            .setMediaId("${mediaId}_video_audio")
+            .setCustomCacheKey("${mediaId}_video_audio")
+            .build()
+        )
+
+    val videoSource =
+      ProgressiveMediaSource.Factory(httpDataSourceFactory)
+        .createMediaSource(
+          MediaItem.Builder()
+            .setUri(videoPlaybackData.videoStreamUrl)
+            .setMediaId(mediaId)
+            .setMediaMetadata(originalMediaMetadata)
+            .setCustomCacheKey("${mediaId}_video")
+            .setTag(originalTag)
+            .build()
+        )
+
+    val mergedSource = MergingMediaSource(videoSource, audioSource)
+
+    withContext(Dispatchers.Main) {
+      audioModeMediaItemBeforeVideo = currentMediaItem
+      audioModeMediaIdBeforeVideo = mediaId
+
+      player.setMediaSource(mergedSource)
+      player.prepare()
+      player.seekTo(positionMs)
+      player.playWhenReady = wasPlaying
+
+      playbackMediaMode.value = PlaybackMediaMode.VIDEO
+      videoPlaybackLoading.value = false
+    }
+  }
+
+  private suspend fun switchToAudioPlayback() {
+    if (playbackMediaMode.value == PlaybackMediaMode.AUDIO) return
+
+    val mediaItem = audioModeMediaItemBeforeVideo
+    val mediaId = audioModeMediaIdBeforeVideo
+
+    if (mediaItem == null || mediaId.isNullOrBlank()) {
+      playbackMediaMode.value = PlaybackMediaMode.AUDIO
+      return
+    }
+
+    val positionMs = player.currentPosition.coerceAtLeast(0L)
+    val wasPlaying = player.playWhenReady
+
+    videoPlaybackLoading.value = true
+    videoPlaybackError.value = null
+
+    withContext(Dispatchers.Main) {
+      player.setMediaItem(mediaItem, positionMs)
+      player.prepare()
+      player.playWhenReady = wasPlaying
+
+      playbackMediaMode.value = PlaybackMediaMode.AUDIO
+      videoPlaybackLoading.value = false
+
+      audioModeMediaItemBeforeVideo = null
+      audioModeMediaIdBeforeVideo = null
+    }
+  }
+
   private lateinit var audioQuality: echo.music.iad1tya.constants.AudioQuality
   private lateinit var ipVersion: IpVersion
 
@@ -559,6 +715,12 @@ class MusicService : MediaLibraryService(), Player.Listener, PlaybackStatsListen
       override fun onReceive(context: Context, intent: Intent) {
         when (intent.action) {
           Intent.ACTION_SCREEN_OFF -> {
+            if (playbackMediaMode.value == PlaybackMediaMode.VIDEO) {
+              scope.launch {
+                Timber.tag(TAG).d("VIDEO_MODE_SWITCH: screen off. Returning to AUDIO mode.")
+                switchToAudioPlayback()
+              }
+            }
             if (!player.isPlaying) {
               scope.launch(Dispatchers.IO) { DiscordPresenceManager.stop() }
             }
@@ -2495,6 +2657,26 @@ class MusicService : MediaLibraryService(), Player.Listener, PlaybackStatsListen
     mediaItem: MediaItem?,
     reason: Int,
   ) {
+    if (playbackMediaMode.value == PlaybackMediaMode.VIDEO) {
+      val newMediaId = mediaItem?.mediaId
+      val videoSourceAudioMediaId = audioModeMediaIdBeforeVideo
+
+      val changedToAnotherSong =
+        newMediaId != null &&
+          newMediaId.isNotBlank() &&
+          videoSourceAudioMediaId != null &&
+          newMediaId != videoSourceAudioMediaId
+
+      if (changedToAnotherSong) {
+        Timber.tag(TAG).d("VIDEO_MODE_SWITCH: track transitioned while in VIDEO mode. Resetting to AUDIO mode.")
+        playbackMediaMode.value = PlaybackMediaMode.AUDIO
+        videoPlaybackLoading.value = false
+        videoPlaybackError.value = null
+        audioModeMediaItemBeforeVideo = null
+        audioModeMediaIdBeforeVideo = null
+      }
+    }
+
     cutoffGuard.onTrackChanged(mediaItem?.mediaId)
     val prevItem = trackedMediaItem
     if (prevItem != null) {
@@ -4200,6 +4382,21 @@ class MusicService : MediaLibraryService(), Player.Listener, PlaybackStatsListen
       MusicWidgetReceiver.ACTION_UPDATE_WIDGET -> {
         updateWidgetUI(player.isPlaying)
       }
+      ACTION_SWITCH_TO_AUDIO_MODE -> {
+        switchPlaybackMediaMode(PlaybackMediaMode.AUDIO)
+      }
+      ACTION_SWITCH_TO_VIDEO_MODE -> {
+        switchPlaybackMediaMode(PlaybackMediaMode.VIDEO)
+      }
+      ACTION_TOGGLE_PLAYBACK_MEDIA_MODE -> {
+        val nextMode =
+          if (playbackMediaMode.value == PlaybackMediaMode.VIDEO) {
+            PlaybackMediaMode.AUDIO
+          } else {
+            PlaybackMediaMode.VIDEO
+          }
+        switchPlaybackMediaMode(nextMode)
+      }
       "echo.music.iad1tya.ACTION_CLEAR_SONG_CACHE" -> {
         val songId = intent.getStringExtra("songId")
         if (songId != null) {
@@ -5150,6 +5347,10 @@ class MusicService : MediaLibraryService(), Player.Listener, PlaybackStatsListen
   }
 
   companion object {
+    const val ACTION_SWITCH_TO_AUDIO_MODE = "echo.music.iad1tya.action.SWITCH_TO_AUDIO_MODE"
+    const val ACTION_SWITCH_TO_VIDEO_MODE = "echo.music.iad1tya.action.SWITCH_TO_VIDEO_MODE"
+    const val ACTION_TOGGLE_PLAYBACK_MEDIA_MODE = "echo.music.iad1tya.action.TOGGLE_PLAYBACK_MEDIA_MODE"
+
     /** Upcoming queue items whose covers are kept ready for the car. */
     private const val ARTWORK_PREFETCH_COUNT = 2
     const val ROOT = "root"

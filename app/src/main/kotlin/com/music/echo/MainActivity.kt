@@ -335,6 +335,10 @@ class MainActivity : ComponentActivity() {
   }
 
   override fun onStop() {
+    if (!isChangingConfigurations) {
+      Timber.tag("MainActivity").d("VIDEO_MODE_SWITCH: app moved to background. Returning to AUDIO mode.")
+      playerConnection?.service?.switchPlaybackMediaMode(echo.music.iad1tya.constants.PlaybackMediaMode.AUDIO)
+    }
     unbindService(serviceConnection)
     super.onStop()
   }

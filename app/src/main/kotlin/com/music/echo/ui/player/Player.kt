@@ -48,6 +48,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsDraggedAsState
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -71,6 +72,7 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.CircularWavyProgressIndicator
 import androidx.compose.material3.ContainedLoadingIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -158,6 +160,7 @@ import androidx.media3.exoplayer.offline.DownloadRequest
 import androidx.media3.exoplayer.offline.DownloadService
 import androidx.media3.exoplayer.trackselection.DefaultTrackSelector
 import androidx.media3.ui.AspectRatioFrameLayout
+import androidx.media3.ui.PlayerView
 import androidx.navigation.NavController
 import androidx.palette.graphics.Palette
 import coil3.compose.AsyncImage
@@ -184,6 +187,7 @@ import echo.music.iad1tya.constants.EnableLyricsThumbnailPlayPauseKey
 import echo.music.iad1tya.constants.HidePlayerThumbnailKey
 import echo.music.iad1tya.constants.HideStatusBarOnFullscreenKey
 import echo.music.iad1tya.constants.KeepScreenOn
+import echo.music.iad1tya.constants.PlaybackMediaMode
 import echo.music.iad1tya.constants.PlayerBackgroundStyle
 import echo.music.iad1tya.constants.PlayerBackgroundStyleKey
 import echo.music.iad1tya.constants.PlayerButtonsStyle
@@ -307,6 +311,12 @@ fun BottomSheetPlayer(
   val showLyricsOnPlayer by rememberPreference(ShowLyricsOnPlayerKey, false)
   val mediaMetadata by playerConnection.mediaMetadata.collectAsState()
   val isLocalMedia = mediaMetadata?.id?.isLocalMediaId() == true
+  val playbackMediaMode by playerConnection.service.playbackMediaMode.collectAsState()
+  val videoPlaybackLoading by playerConnection.service.videoPlaybackLoading.collectAsState()
+  val videoPlaybackError by playerConnection.service.videoPlaybackError.collectAsState()
+  val videoPlaybackAvailable by playerConnection.service.videoPlaybackAvailable.collectAsState()
+  val videoPlaybackAvailabilityLoading by
+    playerConnection.service.videoPlaybackAvailabilityLoading.collectAsState()
 
   val playerBackgroundPref by
     rememberEnumPreference(
@@ -904,6 +914,34 @@ fun BottomSheetPlayer(
   var showInlineLyrics by rememberSaveable { mutableStateOf(false) }
 
   var isFullScreen by rememberSaveable { mutableStateOf(false) }
+
+  var isVideoFullscreenRequested by rememberSaveable { mutableStateOf(false) }
+
+  val isVideoFullscreen =
+    isVideoFullscreenRequested &&
+      playbackMediaMode == PlaybackMediaMode.VIDEO
+
+  VideoFullscreenDialog(
+    isVisible = isVideoFullscreen,
+    player = playerConnection.player,
+    videoPlaybackLoading = videoPlaybackLoading,
+    videoPlaybackError = videoPlaybackError,
+    onExitFullscreen = {
+      isVideoFullscreenRequested = false
+    },
+  )
+
+  LaunchedEffect(playbackMediaMode) {
+    if (playbackMediaMode != PlaybackMediaMode.VIDEO) {
+      isVideoFullscreenRequested = false
+    }
+  }
+
+  LaunchedEffect(playbackMediaMode) {
+    if (playbackMediaMode != PlaybackMediaMode.VIDEO && isFullScreen) {
+      isFullScreen = false
+    }
+  }
 
   val hideStatusBarOnFullscreen by
     rememberPreference(HideStatusBarOnFullscreenKey, defaultValue = false)
@@ -1838,6 +1876,66 @@ fun BottomSheetPlayer(
               }
             }
 
+            val isVideoPlaybackMode = playbackMediaMode == PlaybackMediaMode.VIDEO
+            val nextPlaybackMediaMode =
+              if (isVideoPlaybackMode) {
+                PlaybackMediaMode.AUDIO
+              } else {
+                PlaybackMediaMode.VIDEO
+              }
+
+            val showVideoModeButton =
+              !isLocalMedia &&
+                !isCasting &&
+                (videoPlaybackAvailable || isVideoPlaybackMode)
+
+            AnimatedVisibility(
+              visible = showVideoModeButton,
+              enter = fadeIn(),
+              exit = fadeOut(),
+            ) {
+              FilledIconButton(
+                onClick = {
+                  playerConnection.service.switchPlaybackMediaMode(nextPlaybackMediaMode)
+                },
+                enabled = !videoPlaybackLoading && !videoPlaybackAvailabilityLoading,
+                shape = middleShape,
+                colors =
+                  IconButtonDefaults.filledIconButtonColors(
+                    containerColor =
+                      if (isVideoPlaybackMode) {
+                        textButtonColor
+                      } else {
+                        textButtonColor.copy(alpha = 0.22f)
+                      },
+                    contentColor =
+                      if (isVideoPlaybackMode) {
+                        iconButtonColor
+                      } else {
+                        textButtonColor
+                      },
+                  ),
+                modifier =
+                  Modifier
+                    .width(72.dp)
+                    .height(42.dp),
+              ) {
+                if (videoPlaybackLoading) {
+                  CircularProgressIndicator(
+                    modifier = Modifier.size(18.dp),
+                    strokeWidth = 2.dp,
+                  )
+                } else {
+                  Text(
+                    text = if (isVideoPlaybackMode) "Audio" else "Video",
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                  )
+                }
+              }
+            }
+
             AnimatedContent(targetState = showInlineLyrics, label = "LikeButton") { showLyrics ->
               if (showLyrics) {
                 val currentLyrics by playerConnection.currentLyrics.collectAsState(initial = null)
@@ -1944,7 +2042,21 @@ fun BottomSheetPlayer(
             }
           }
 
-          Spacer(modifier = Modifier.size(12.dp))
+          Spacer(modifier = Modifier.size(8.dp))
+
+          VideoModeButton(
+            playbackMediaMode = playbackMediaMode,
+            videoPlaybackAvailable = mediaMetadata != null,
+            videoPlaybackLoading = videoPlaybackLoading,
+            videoPlaybackAvailabilityLoading = false,
+            isLocalMedia = isLocalMedia,
+            isCasting = isCasting,
+            textButtonColor = textButtonColor,
+            iconButtonColor = iconButtonColor,
+            onSwitchPlaybackMediaMode = playerConnection.service::switchPlaybackMediaMode,
+          )
+
+          Spacer(modifier = Modifier.size(8.dp))
 
           AnimatedContent(targetState = showInlineLyrics, label = "LikeButton") { showLyrics ->
             if (showLyrics) {
@@ -2874,13 +2986,28 @@ fun BottomSheetPlayer(
                   positionProvider = { effectivePosition }
                 )
               } else {
-                Thumbnail(
-                  sliderPositionProvider = sliderPositionProvider,
-                  modifier = Modifier.animateContentSize(),
-                  isPlayerExpanded = isExpandedProvider,
-                  isLandscape = true,
-                  isListenTogetherGuest = isListenTogetherGuest
-                )
+                if (playbackMediaMode == PlaybackMediaMode.VIDEO) {
+                  MainPlaybackVideoArtwork(
+                    player = playerConnection.player,
+                    videoPlaybackLoading = videoPlaybackLoading,
+                    videoPlaybackError = videoPlaybackError,
+                    textButtonColor = textButtonColor,
+                    iconButtonColor = iconButtonColor,
+                    isVideoFullscreen = isVideoFullscreen,
+                    onFullscreenClick = {
+                      isVideoFullscreenRequested = true
+                    },
+                    modifier = Modifier.animateContentSize(),
+                  )
+                } else {
+                  Thumbnail(
+                    sliderPositionProvider = sliderPositionProvider,
+                    modifier = Modifier.animateContentSize(),
+                    isPlayerExpanded = isExpandedProvider,
+                    isLandscape = true,
+                    isListenTogetherGuest = isListenTogetherGuest
+                  )
+                }
               }
             }
           }
@@ -2940,12 +3067,27 @@ fun BottomSheetPlayer(
                   positionProvider = { effectivePosition }
                 )
               } else {
-                Thumbnail(
-                  sliderPositionProvider = sliderPositionProvider,
-                  modifier = Modifier.nestedScroll(state.preUpPostDownNestedScrollConnection),
-                  isPlayerExpanded = isExpandedProvider,
-                  isListenTogetherGuest = isListenTogetherGuest
-                )
+                if (playbackMediaMode == PlaybackMediaMode.VIDEO) {
+                  MainPlaybackVideoArtwork(
+                    player = playerConnection.player,
+                    videoPlaybackLoading = videoPlaybackLoading,
+                    videoPlaybackError = videoPlaybackError,
+                    textButtonColor = textButtonColor,
+                    iconButtonColor = iconButtonColor,
+                    isVideoFullscreen = isVideoFullscreen,
+                    onFullscreenClick = {
+                      isVideoFullscreenRequested = true
+                    },
+                    modifier = Modifier.nestedScroll(state.preUpPostDownNestedScrollConnection),
+                  )
+                } else {
+                  Thumbnail(
+                    sliderPositionProvider = sliderPositionProvider,
+                    modifier = Modifier.nestedScroll(state.preUpPostDownNestedScrollConnection),
+                    isPlayerExpanded = isExpandedProvider,
+                    isListenTogetherGuest = isListenTogetherGuest
+                  )
+                }
               }
             }
           }
@@ -3245,3 +3387,100 @@ private fun BackgroundVideoView(
     modifier = modifier.alpha(alpha)
   )
 }
+
+@androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
+@Composable
+private fun MainPlaybackVideoView(
+  player: ExoPlayer?,
+  modifier: Modifier = Modifier,
+) {
+  AndroidView(
+    modifier = modifier,
+    factory = { context ->
+      PlayerView(context).apply {
+        useController = false
+        resizeMode = AspectRatioFrameLayout.RESIZE_MODE_FIT
+        setShowBuffering(PlayerView.SHOW_BUFFERING_WHEN_PLAYING)
+
+        isClickable = false
+        isFocusable = false
+        setOnTouchListener { _, _ -> false }
+      }
+    },
+    update = { playerView ->
+      if (playerView.player !== player) {
+        playerView.player = player
+      }
+    },
+  )
+}
+
+@Composable
+private fun MainPlaybackVideoArtwork(
+  player: ExoPlayer?,
+  videoPlaybackLoading: Boolean,
+  videoPlaybackError: String?,
+  textButtonColor: Color,
+  iconButtonColor: Color,
+  isVideoFullscreen: Boolean,
+  onFullscreenClick: () -> Unit,
+  modifier: Modifier = Modifier,
+) {
+  Box(
+    contentAlignment = Alignment.Center,
+    modifier = modifier.fillMaxSize(),
+  ) {
+    Box(
+      contentAlignment = Alignment.Center,
+      modifier =
+        Modifier.fillMaxWidth()
+          .aspectRatio(16f / 9f)
+          .clip(RoundedCornerShape(ThumbnailCornerRadius))
+          .background(Color.Black),
+    ) {
+      if (!isVideoFullscreen) {
+        MainPlaybackVideoView(
+          player = player,
+          modifier = Modifier.fillMaxSize(),
+        )
+
+        FilledIconButton(
+          onClick = onFullscreenClick,
+          shape = RoundedCornerShape(24.dp),
+          colors =
+            IconButtonDefaults.filledIconButtonColors(
+              containerColor = textButtonColor.copy(alpha = 0.24f),
+              contentColor = textButtonColor,
+            ),
+          modifier =
+            Modifier.align(Alignment.BottomEnd)
+              .padding(10.dp)
+              .size(40.dp),
+        ) {
+          Icon(
+            painter = painterResource(R.drawable.fullscreen),
+            contentDescription = null,
+            modifier = Modifier.size(22.dp),
+          )
+        }
+      }
+    }
+
+    if (videoPlaybackLoading) {
+      CircularProgressIndicator(
+        modifier = Modifier.align(Alignment.Center),
+      )
+    }
+
+    videoPlaybackError?.let { error ->
+      Text(
+        text = error,
+        modifier =
+          Modifier.align(Alignment.Center)
+            .padding(16.dp),
+        color = MaterialTheme.colorScheme.error,
+      )
+    }
+  }
+}
+

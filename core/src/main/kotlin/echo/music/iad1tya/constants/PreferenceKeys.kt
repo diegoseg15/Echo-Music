@@ -40,6 +40,11 @@ enum class HapticIntensity(val label: String, val scaleFactor: Float) {
   }
 }
 
+enum class PlaybackMediaMode {
+  AUDIO,
+  VIDEO,
+}
+
 val DynamicThemeKey = booleanPreferencesKey("dynamicTheme")
 val SelectedThemeColorKey = intPreferencesKey("selectedThemeColor")
 val DarkModeKey = stringPreferencesKey("darkMode")

@@ -221,6 +221,17 @@ object YTPlayerUtils {
     val streamExpiresInSeconds: Int,
     val headers: Map<String, String>? = null,
   )
+
+  data class VideoPlaybackData(
+    val audioConfig: PlayerResponse.PlayerConfig.AudioConfig?,
+    val videoDetails: PlayerResponse.VideoDetails?,
+    val playbackTracking: PlayerResponse.PlaybackTracking?,
+    val audioFormat: PlayerResponse.StreamingData.Format,
+    val audioStreamUrl: String,
+    val videoFormat: PlayerResponse.StreamingData.Format,
+    val videoStreamUrl: String,
+    val streamExpiresInSeconds: Int,
+  )
   /**
    * Custom player response intended to use for playback. Metadata like audioConfig and videoDetails
    * are from [MAIN_CLIENT]. Format & stream can be from [MAIN_CLIENT] or [STREAM_FALLBACK_CLIENTS].
@@ -273,6 +284,80 @@ object YTPlayerUtils {
       streamUrl = extracted.url,
       streamExpiresInSeconds = 21600,
       headers = extracted.headers
+    )
+  }
+
+  fun findVideoFormat(
+    playerResponse: PlayerResponse,
+    connectivityManager: ConnectivityManager,
+  ): PlayerResponse.StreamingData.Format? {
+    val isMetered = connectivityManager.isActiveNetworkMetered
+    val maxHeight = if (isMetered) 360 else 720
+
+    val videoFormats =
+      playerResponse
+        .streamingData
+        ?.adaptiveFormats
+        ?.filter { it.width != null && it.height != null && it.mimeType.startsWith("video/", ignoreCase = true) }
+        .orEmpty()
+
+    if (videoFormats.isEmpty()) return null
+
+    return videoFormats
+      .filter { it.mimeType.startsWith("video/mp4", ignoreCase = true) && (it.height ?: 0) in 1..maxHeight }
+      .maxByOrNull { it.height ?: 0 }
+      ?: videoFormats.filter { (it.height ?: 0) in 1..maxHeight }.maxByOrNull { it.height ?: 0 }
+      ?: videoFormats.firstOrNull()
+  }
+
+  suspend fun playerResponseForVideoPlayback(
+    videoId: String,
+    playlistId: String? = null,
+    connectivityManager: ConnectivityManager,
+    context: android.content.Context? = null,
+  ): Result<VideoPlaybackData> = runCatching {
+    val audioData = playerResponseForPlayback(
+      videoId = videoId,
+      playlistId = playlistId,
+      audioQuality = AudioQuality.AUTO,
+      connectivityManager = connectivityManager
+    ).getOrThrow()
+
+    var videoFormat: PlayerResponse.StreamingData.Format? = null
+    var videoStreamUrl: String? = null
+    var selectedPlayerResponse: PlayerResponse? = null
+
+    for (client in STREAM_FALLBACK_CLIENTS) {
+      val resp = YouTube.player(videoId, playlistId, client = client).getOrNull() ?: continue
+      if (resp.playabilityStatus.status != "OK") continue
+
+      val vf = findVideoFormat(resp, connectivityManager) ?: continue
+      val url = if (!vf.url.isNullOrEmpty()) {
+        vf.url
+      } else {
+        com.music.innertube.NewPipeExtractor.getStreamUrl(vf, videoId)
+      }
+      if (!url.isNullOrEmpty()) {
+        videoFormat = vf
+        videoStreamUrl = url
+        selectedPlayerResponse = resp
+        break
+      }
+    }
+
+    if (videoFormat == null || videoStreamUrl == null) {
+      throw Exception("No suitable video stream found")
+    }
+
+    VideoPlaybackData(
+      audioConfig = audioData.audioConfig,
+      videoDetails = selectedPlayerResponse?.videoDetails ?: audioData.videoDetails,
+      playbackTracking = selectedPlayerResponse?.playbackTracking ?: audioData.playbackTracking,
+      audioFormat = audioData.format,
+      audioStreamUrl = audioData.streamUrl,
+      videoFormat = videoFormat,
+      videoStreamUrl = videoStreamUrl,
+      streamExpiresInSeconds = audioData.streamExpiresInSeconds,
     )
   }
 
