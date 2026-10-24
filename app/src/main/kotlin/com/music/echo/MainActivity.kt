@@ -1458,40 +1458,18 @@ class MainActivity : ComponentActivity() {
                           .height(navSlideDistance)
                           .offset(y = navOffsetY),
                     ) {
-                      FloatingNavigationToolbar(
+                      FixedNavigationBar(
                         items = navigationItems,
-                        pureBlack = pureBlack,
-                        onMusicFlowClick =
-                          if (musicFlowEnabled) {
-                            { navController.navigate("music_flow") { launchSingleTop = true } }
-                          } else null,
-                        musicFlowIconRes = R.drawable.swipe,
-                        musicFlowContentDescription = stringResource(R.string.music_flow),
-                        onShuffleClick = onShuffleClick,
-                        shuffleEnabled = shuffleEnabled,
-                        shuffleIconRes = R.drawable.shuffle,
-                        shuffleContentDescription = stringResource(R.string.shuffle),
-                        onMusicRecognitionClick = onMusicRecognitionClick,
-                        musicRecognitionContentDescription = stringResource(R.string.recognition),
-                        onAiHubClick = {
-                          navController.navigate("settings/ai") { launchSingleTop = true }
-                        },
-                        aiHubIconRes = R.drawable.ai_pfp,
-                        aiHubContentDescription = stringResource(R.string.ai_lyrics_translation),
-                        onSearchLongClick = onRailSearchLongClick,
+                        bottomInset = bottomInset,
                         isSelected = { screen ->
                           currentRoute == screen.route ||
                             currentRoute?.startsWith("${screen.route}/") == true
                         },
                         onItemClick = onNavItemClick,
-                        modifier =
-                          Modifier.align(Alignment.BottomCenter)
-                            .padding(
-                              start = FloatingToolbarHorizontalPadding,
-                              end = FloatingToolbarHorizontalPadding,
-                              bottom = bottomInset + FloatingToolbarBottomPadding,
-                            )
-                            .height(NavigationBarHeight)
+                        onMusicRecognitionClick = onMusicRecognitionClick,
+                        musicRecognitionIconRes = R.drawable.mic,
+                        musicRecognitionContentDescription = stringResource(R.string.recognition),
+                        modifier = Modifier.align(Alignment.BottomCenter)
                       )
                     }
 
