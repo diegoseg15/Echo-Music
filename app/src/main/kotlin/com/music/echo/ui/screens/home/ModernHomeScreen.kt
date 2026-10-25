@@ -302,6 +302,24 @@ fun ModernHomeScreen(
         Spacer(modifier = Modifier.height(4.dp))
       }
 
+      // SECCIÓN: BANNER DE ACTUALIZACIÓN (Arriba de Escuchado recientemente)
+      val currentUpdate = updateVersion
+      if (currentUpdate != null && !isBannerDismissed) {
+        item(key = "section_update_banner") {
+          UpdateAvailableBanner(
+            versionName = currentUpdate,
+            onUpdateClick = {
+              val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/diegoseg15/Echo-Music/releases"))
+              context.startActivity(intent)
+            },
+            onDismissClick = {
+              isBannerDismissed = true
+            },
+            modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 4.dp)
+          )
+        }
+      }
+
       // SECCIÓN 1: ESCUCHADO RECIENTEMENTE (Llenado dinámico sin huecos)
       item(key = "section_recently_played") {
         RecentlyPlayedSection(
@@ -328,23 +346,7 @@ fun ModernHomeScreen(
         )
       }
 
-      // SECCIÓN: BANNER DE ACTUALIZACIÓN
-      val currentUpdate = updateVersion
-      if (currentUpdate != null && !isBannerDismissed) {
-        item(key = "section_update_banner") {
-          UpdateAvailableBanner(
-            versionName = currentUpdate,
-            onUpdateClick = {
-              val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/diegoseg15/Echo-Music/tags"))
-              context.startActivity(intent)
-            },
-            onDismissClick = {
-              isBannerDismissed = true
-            },
-            modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 12.dp)
-          )
-        }
-      }
+
 
       // SECCIÓN 2: TENDENCIAS AHORA
       item(key = "section_trending_now") {

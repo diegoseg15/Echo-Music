@@ -133,7 +133,7 @@ fun UpdateSettings(
               }
             },
             onClick = {
-              val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/diegoseg15/Echo-Music/tags"))
+              val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/diegoseg15/Echo-Music/releases"))
               context.startActivity(intent)
             }
           )
