@@ -109,21 +109,27 @@ fun AppIconSettingsScreen(
       listOf(
         AppIconOption(
           type = AppIconType.DEFAULT,
-          title = "Neon Glow",
-          description = "Gradiente neón vibrante oficial de VYLUNE",
-          iconRes = R.mipmap.vylune_neon_icon
+          title = "VYLUNE Crimson",
+          description = "Rojo carmesí oficial de VYLUNE (Predeterminado)",
+          iconRes = R.mipmap.vylune_crimson_icon
+        ),
+        AppIconOption(
+          type = AppIconType.DARK,
+          title = "VYLUNE Noir",
+          description = "Minimalista oscuro profundo con símbolo blanco",
+          iconRes = R.mipmap.vylune_dark_icon
+        ),
+        AppIconOption(
+          type = AppIconType.LIGHT,
+          title = "VYLUNE White",
+          description = "Limpio y luminoso con símbolo negro",
+          iconRes = R.mipmap.vylune_light_icon
         ),
         AppIconOption(
           type = AppIconType.OBSIDIAN,
           title = "Obsidian Glass",
           description = "Diseño oscuro con relieve y ondas de cristal",
           iconRes = R.mipmap.vylune_obsidian_icon
-        ),
-        AppIconOption(
-          type = AppIconType.CRIMSON,
-          title = "Crimson Red",
-          description = "Rojo carmesí elegante con el símbolo VYLUNE",
-          iconRes = R.mipmap.vylune_crimson_icon
         ),
         AppIconOption(
           type = AppIconType.MIDNIGHT,

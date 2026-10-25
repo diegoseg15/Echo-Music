@@ -124,13 +124,13 @@ fun AboutScreen(
               Material3SettingsItem(
                 icon = painterResource(R.drawable.ic_instagram_new),
                 title = { Text("Instagram") },
-                description = { Text("@diegoseg15") },
-                onClick = { uriHandler.openUri("https://instagram.com/diegoseg15") }
+                description = { Text("@diegoseg_15") },
+                onClick = { uriHandler.openUri("https://instagram.com/diegoseg_15") }
               ),
               Material3SettingsItem(
                 icon = painterResource(R.drawable.github),
                 title = { Text("GitHub") },
-                description = { Text("@diegoseg15") },
+                description = { Text("@diegoseg_15") },
                 onClick = { uriHandler.openUri("https://github.com/diegoseg15") }
               )
             )

@@ -1,5 +1,20 @@
 package echo.music.iad1tya.ui.screens.home
 
+import android.content.Intent
+import android.net.Uri
+import androidx.compose.foundation.clickable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.platform.LocalContext
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import java.net.URL
+import java.net.HttpURLConnection
+import org.json.JSONArray
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -91,6 +106,37 @@ fun ModernHomeScreen(
   val playerConnection = LocalPlayerConnection.current ?: return
   val haptic = LocalHapticFeedback.current
   val scope = rememberCoroutineScope()
+
+  val context = LocalContext.current
+  var updateVersion by rememberSaveable { mutableStateOf<String?>(null) }
+  var isBannerDismissed by rememberSaveable { mutableStateOf(false) }
+
+  LaunchedEffect(Unit) {
+    withContext(Dispatchers.IO) {
+      try {
+        val url = URL("https://api.github.com/repos/diegoseg15/Echo-Music/tags")
+        val conn = url.openConnection() as HttpURLConnection
+        conn.setRequestProperty("User-Agent", "VYLUNE-App")
+        conn.connectTimeout = 6000
+        conn.readTimeout = 6000
+        if (conn.responseCode == 200) {
+          val jsonText = conn.inputStream.bufferedReader().use { it.readText() }
+          val jsonArray = JSONArray(jsonText)
+          if (jsonArray.length() > 0) {
+            val tagObj = jsonArray.getJSONObject(0)
+            val tagName = tagObj.getString("name")
+            val cleanVersion = tagName.removePrefix("v").removePrefix("V")
+            if (isVersionNewerOrEqual(cleanVersion, "1.4.4")) {
+              updateVersion = tagName
+            }
+          }
+        }
+      } catch (e: Exception) {
+        e.printStackTrace()
+      }
+    }
+  }
+
 
   val isRefreshing by viewModel.isRefreshing.collectAsState()
   val pullRefreshState = rememberPullToRefreshState()
@@ -280,6 +326,24 @@ fun ModernHomeScreen(
             }
           },
         )
+      }
+
+      // SECCIÓN: BANNER DE ACTUALIZACIÓN
+      val currentUpdate = updateVersion
+      if (currentUpdate != null && !isBannerDismissed) {
+        item(key = "section_update_banner") {
+          UpdateAvailableBanner(
+            versionName = currentUpdate,
+            onUpdateClick = {
+              val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/diegoseg15/Echo-Music/tags"))
+              context.startActivity(intent)
+            },
+            onDismissClick = {
+              isBannerDismissed = true
+            },
+            modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 12.dp)
+          )
+        }
       }
 
       // SECCIÓN 2: TENDENCIAS AHORA
@@ -1141,4 +1205,120 @@ fun FavoriteVideosSection(
       }
     }
   }
+}
+
+
+
+@Composable
+fun UpdateAvailableBanner(
+  versionName: String,
+  onUpdateClick: () -> Unit,
+  onDismissClick: () -> Unit,
+  modifier: Modifier = Modifier,
+) {
+  Card(
+    modifier = modifier
+      .fillMaxWidth()
+      .clip(RoundedCornerShape(20.dp)),
+    shape = RoundedCornerShape(20.dp),
+    colors = CardDefaults.cardColors(containerColor = Color.Transparent),
+    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+  ) {
+    Box(
+      modifier = Modifier
+        .fillMaxWidth()
+        .background(
+          Brush.horizontalGradient(
+            colors = listOf(
+              Color(0xFFDA3826),
+              Color(0xFF8B1A0E)
+            )
+          )
+        )
+        .padding(16.dp)
+    ) {
+      Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
+      ) {
+        Box(
+          modifier = Modifier
+            .size(44.dp)
+            .clip(CircleShape)
+            .background(Color.White.copy(alpha = 0.2f)),
+          contentAlignment = Alignment.Center
+        ) {
+          Icon(
+            painter = painterResource(R.drawable.update),
+            contentDescription = null,
+            tint = Color.White,
+            modifier = Modifier.size(24.dp)
+          )
+        }
+
+        Spacer(modifier = Modifier.width(14.dp))
+
+        Column(modifier = Modifier.weight(1f)) {
+          Text(
+            text = "¡Nueva actualización disponible!",
+            style = MaterialTheme.typography.titleSmall,
+            fontWeight = FontWeight.Bold,
+            color = Color.White
+          )
+          Spacer(modifier = Modifier.height(2.dp))
+          Text(
+            text = "Versión $versionName lista en GitHub",
+            style = MaterialTheme.typography.bodySmall,
+            color = Color.White.copy(alpha = 0.85f),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+          )
+        }
+
+        Spacer(modifier = Modifier.width(8.dp))
+
+        Card(
+          shape = RoundedCornerShape(50),
+          colors = CardDefaults.cardColors(containerColor = Color.White),
+          elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+          modifier = Modifier.clickable { onUpdateClick() }
+        ) {
+          Text(
+            text = "Actualizar",
+            color = Color(0xFFDA3826),
+            fontWeight = FontWeight.Bold,
+            style = MaterialTheme.typography.labelMedium,
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp)
+          )
+        }
+
+        Spacer(modifier = Modifier.width(4.dp))
+
+        IconButton(
+          onClick = onDismissClick,
+          modifier = Modifier.size(28.dp)
+        ) {
+          Icon(
+            painter = painterResource(R.drawable.close),
+            contentDescription = "Cerrar",
+            tint = Color.White.copy(alpha = 0.7f),
+            modifier = Modifier.size(16.dp)
+          )
+        }
+      }
+    }
+  }
+}
+
+private fun isVersionNewerOrEqual(v1: String, v2: String): Boolean {
+  val parts1 = v1.split('.').mapNotNull { it.takeWhile { c -> c.isDigit() }.toIntOrNull() }
+  val parts2 = v2.split('.').mapNotNull { it.takeWhile { c -> c.isDigit() }.toIntOrNull() }
+  val length = maxOf(parts1.size, parts2.size)
+  for (i in 0 until length) {
+    val num1 = parts1.getOrElse(i) { 0 }
+    val num2 = parts2.getOrElse(i) { 0 }
+    if (num1 > num2) return true
+    if (num1 < num2) return false
+  }
+  return true
 }

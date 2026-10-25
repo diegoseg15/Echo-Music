@@ -9,7 +9,9 @@ enum class AppIconType(val value: Int) {
   OBSIDIAN(1),
   CRIMSON(2),
   MIDNIGHT(3),
-  PURPLE(4);
+  PURPLE(4),
+  DARK(5),
+  LIGHT(6);
 
   companion object {
     fun fromValue(value: Int): AppIconType =
@@ -26,6 +28,8 @@ object IconUtils {
     val crimson = ComponentName(context, "echo.music.iad1tya.MainActivityCrimson")
     val midnight = ComponentName(context, "echo.music.iad1tya.MainActivityMidnight")
     val purple = ComponentName(context, "echo.music.iad1tya.MainActivityPurple")
+    val dark = ComponentName(context, "echo.music.iad1tya.MainActivityDark")
+    val light = ComponentName(context, "echo.music.iad1tya.MainActivityLight")
 
     pm.setComponentEnabledSetting(
       defaultAlias,
@@ -54,6 +58,18 @@ object IconUtils {
     pm.setComponentEnabledSetting(
       purple,
       if (iconType == AppIconType.PURPLE) PackageManager.COMPONENT_ENABLED_STATE_ENABLED
+      else PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
+      PackageManager.DONT_KILL_APP
+    )
+    pm.setComponentEnabledSetting(
+      dark,
+      if (iconType == AppIconType.DARK) PackageManager.COMPONENT_ENABLED_STATE_ENABLED
+      else PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
+      PackageManager.DONT_KILL_APP
+    )
+    pm.setComponentEnabledSetting(
+      light,
+      if (iconType == AppIconType.LIGHT) PackageManager.COMPONENT_ENABLED_STATE_ENABLED
       else PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
       PackageManager.DONT_KILL_APP
     )
