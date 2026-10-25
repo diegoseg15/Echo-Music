@@ -44,9 +44,6 @@ import echo.music.iad1tya.ui.component.IconButton
 import echo.music.iad1tya.ui.component.Material3SettingsGroup
 import echo.music.iad1tya.ui.component.Material3SettingsItem
 import echo.music.iad1tya.ui.utils.backToMain
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
-import org.json.JSONArray
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -57,33 +54,6 @@ fun AboutScreen(
   highlightKey: String? = null
 ) {
   val uriHandler = LocalUriHandler.current
-
-  data class Contributor(val login: String, val avatarUrl: String, val htmlUrl: String)
-  var contributors by remember { mutableStateOf<List<Contributor>>(emptyList()) }
-
-  LaunchedEffect(Unit) {
-    withContext(Dispatchers.IO) {
-      try {
-        val url = java.net.URL("https://api.github.com/repos/diegoseg15/Echo-Music/contributors")
-        val json = url.openStream().bufferedReader().use { it.readText() }
-        val array = JSONArray(json)
-        val list = mutableListOf<Contributor>()
-        for (i in 0 until array.length()) {
-          val obj = array.getJSONObject(i)
-          list.add(
-            Contributor(
-              obj.getString("login"),
-              obj.getString("avatar_url"),
-              obj.getString("html_url")
-            )
-          )
-        }
-        contributors = list
-      } catch (e: Exception) {
-        e.printStackTrace()
-      }
-    }
-  }
   val context = LocalContext.current
 
   Scaffold(
@@ -140,30 +110,6 @@ fun AboutScreen(
     ) {
       item { AboutAppCard() }
 
-      if (contributors.isNotEmpty()) {
-        item {
-          Column(modifier = Modifier.fillMaxWidth()) {
-            echo.music.iad1tya.ui.component.PreferenceGroupTitle(title = "Contributors")
-            Row(
-              modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-              horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-              contributors.forEach { contributor ->
-                coil3.compose.AsyncImage(
-                  model = contributor.avatarUrl,
-                  contentDescription = contributor.login,
-                  modifier =
-                    Modifier.size(48.dp).clip(CircleShape).clickable {
-                      uriHandler.openUri(contributor.htmlUrl)
-                    },
-                  contentScale = androidx.compose.ui.layout.ContentScale.Crop
-                )
-              }
-            }
-          }
-        }
-      }
-
       item {
         Material3SettingsGroup(
           title = "Desarrollador",
@@ -177,9 +123,9 @@ fun AboutScreen(
               ),
               Material3SettingsItem(
                 icon = painterResource(R.drawable.ic_instagram_new),
-                title = { Text("Redes Sociales") },
+                title = { Text("Instagram") },
                 description = { Text("@diegoseg15") },
-                onClick = { uriHandler.openUri("https://github.com/diegoseg15") }
+                onClick = { uriHandler.openUri("https://instagram.com/diegoseg15") }
               ),
               Material3SettingsItem(
                 icon = painterResource(R.drawable.github),

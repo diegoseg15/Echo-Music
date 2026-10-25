@@ -181,7 +181,7 @@ private fun WelcomeAppCard() {
       )
       Spacer(Modifier.height(4.dp))
       Text(
-        text = "Echo Music",
+        text = "VYLUNE",
         style = MaterialTheme.typography.titleLarge,
         fontWeight = FontWeight.Bold,
         color = MaterialTheme.colorScheme.onSurface,

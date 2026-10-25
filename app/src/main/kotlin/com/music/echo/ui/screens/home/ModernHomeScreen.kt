@@ -286,7 +286,7 @@ fun ModernHomeScreen(
       item(key = "section_trending_now") {
         TrendingNowSection(
           songs = trendingSongs.take(12),
-          onSeeAllClick = { navController.navigate("charts_screen") },
+          onSeeAllClick = { navController.navigate("charts_screen?section=trending") },
           onSongClick = { song ->
             playerConnection.playQueue(
               YouTubeQueue(
@@ -312,7 +312,7 @@ fun ModernHomeScreen(
       item(key = "section_songs_of_the_week_header") {
         HomeSectionHeader(
           title = "Canciones de la semana",
-          onSeeAllClick = { navController.navigate("charts_screen") },
+          onSeeAllClick = { navController.navigate("charts_screen?section=top") },
         )
       }
 

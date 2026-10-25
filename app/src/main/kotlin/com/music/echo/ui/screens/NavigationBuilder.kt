@@ -120,7 +120,20 @@ fun NavGraphBuilder.navigationBuilder(
 
   composable("new_release") { NewReleaseScreen(navController, scrollBehavior) }
 
-  composable("charts_screen") { ChartsScreen(navController) }
+  composable(
+    route = "charts_screen?section={section}",
+    arguments =
+      listOf(
+        navArgument("section") {
+          type = NavType.StringType
+          nullable = true
+          defaultValue = null
+        }
+      )
+  ) { backStackEntry ->
+    val section = backStackEntry.arguments?.getString("section")
+    ChartsScreen(navController = navController, filterSection = section)
+  }
 
   composable(
     route = "browse/{browseId}",
