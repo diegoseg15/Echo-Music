@@ -74,8 +74,8 @@ fun AppIconSettingsScreen(
     coroutineScope.launch {
       val result =
         snackbarHostState.showSnackbar(
-          message = "Icon updated, restart to apply",
-          actionLabel = "Restart"
+          message = "Icono actualizado, reinicia para aplicar",
+          actionLabel = "Reiniciar"
         )
       if (result == SnackbarResult.ActionPerformed) {
         val packageManager = activity.packageManager
@@ -94,10 +94,10 @@ fun AppIconSettingsScreen(
     containerColor = MaterialTheme.colorScheme.surface,
     topBar = {
       TopAppBar(
-        title = { Text("App Icon", fontWeight = FontWeight.Bold) },
+        title = { Text("Icono de la app", fontWeight = FontWeight.Bold) },
         navigationIcon = {
           IconButton(onClick = { navController.navigateUp() }) {
-            Icon(painter = painterResource(R.drawable.arrow_back), contentDescription = "Back")
+            Icon(painter = painterResource(R.drawable.arrow_back), contentDescription = "Atrás")
           }
         },
         colors =
@@ -107,54 +107,37 @@ fun AppIconSettingsScreen(
   ) { innerPadding ->
     val icons =
       listOf(
-        AppIconOption(AppIconType.CRAFT, "Craft", "Craft icon by CR3TO_", R.mipmap.ic_launcher_craft),
-        AppIconOption(AppIconType.SADIE, "Sadie Sink", "Sadie Sink on community demand", R.mipmap.ic_launcher_sadie),
         AppIconOption(
-          AppIconType.BILLIE_EILISH,
-          "Billie Eilish",
-          "billie eilish suggested by Lalo salamanca",
-          R.mipmap.billie_eilish_icon
-        ),
-        AppIconOption(AppIconType.CAT, "Cat Icon", "A Pinkish cat-themed icon", R.mipmap.cat_icon),
-        AppIconOption(
-          AppIconType.CRAZY_BLUE,
-          "Crazy Blue Icon",
-          "A vibrant crazy blue icon",
-          R.mipmap.crazy_blue_icon
+          type = AppIconType.DEFAULT,
+          title = "Neon Glow",
+          description = "Gradiente neón vibrante oficial de VYLUNE",
+          iconRes = R.mipmap.vylune_neon_icon
         ),
         AppIconOption(
-          AppIconType.ECHO_CAT,
-          "Echo Cat",
-          "A playful cat by Alarp_Svc",
-          R.mipmap.echo_cat_icon
+          type = AppIconType.OBSIDIAN,
+          title = "Obsidian Glass",
+          description = "Diseño oscuro con relieve y ondas de cristal",
+          iconRes = R.mipmap.vylune_obsidian_icon
         ),
         AppIconOption(
-          AppIconType.LEGACY,
-          "Legacy Icon",
-          "The OG Monochrome Icon",
-          R.mipmap.legacy_icon
+          type = AppIconType.CRIMSON,
+          title = "Crimson Red",
+          description = "Rojo carmesí elegante con el símbolo VYLUNE",
+          iconRes = R.mipmap.vylune_crimson_icon
         ),
         AppIconOption(
-          AppIconType.DEFAULT,
-          "New Icon",
-          "The standard vibrant icon",
-          R.mipmap.ic_launcher
-        ),
-        AppIconOption(AppIconType.POOKIE, "Pookie Icon", "A Cute Pink icon", R.mipmap.pookie_icon),
-        AppIconOption(
-          AppIconType.SABRINA_CARPENTER,
-          "Sabrina Carpenter",
-          "Suggested by notdieinganymore",
-          R.mipmap.ic_launcher_sabrina
+          type = AppIconType.MIDNIGHT,
+          title = "Midnight Black",
+          description = "Minimalista negro profundo y puro",
+          iconRes = R.mipmap.vylune_midnight_icon
         ),
         AppIconOption(
-          AppIconType.SABRINA_CARPENTER_2,
-          "Sabrina Carpenter 2",
-          "Suggested by Falvik",
-          R.mipmap.ic_launcher_sabrina2
-        ),
-        AppIconOption(AppIconType.SKY, "Sky Icon", "A beautiful sky-themed icon", R.mipmap.sky_icon)
-      ).sortedBy { it.title.lowercase() }
+          type = AppIconType.PURPLE,
+          title = "Royal Purple",
+          description = "Púrpura galáctico en formato circular",
+          iconRes = R.mipmap.vylune_purple_icon
+        )
+      )
 
     Column(
       modifier =
@@ -170,7 +153,7 @@ fun AppIconSettingsScreen(
       Spacer(modifier = Modifier.height(8.dp))
 
       Text(
-        text = "Choose your launcher icon",
+        text = "Elige tu icono de VYLUNE",
         style = MaterialTheme.typography.titleMedium,
         color = MaterialTheme.colorScheme.primary,
         fontWeight = FontWeight.Bold,
