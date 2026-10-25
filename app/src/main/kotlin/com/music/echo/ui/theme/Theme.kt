@@ -27,7 +27,7 @@ import echo.music.iad1tya.constants.AppFont
 import echo.music.iad1tya.constants.SelectedFontKey
 import echo.music.iad1tya.utils.rememberPreference
 
-val DefaultThemeColor = Color(0xFFED5564)
+val DefaultThemeColor = Color(0xFFDA3826)
 
 @Composable
 fun echomusicTheme(
@@ -37,7 +37,7 @@ fun echomusicTheme(
   content: @Composable () -> Unit,
 ) {
   val context = LocalContext.current
-  val selectedFontValue by rememberPreference(SelectedFontKey, AppFont.SYSTEM.value)
+  val selectedFontValue by rememberPreference(SelectedFontKey, AppFont.OUTFIT.value)
   val customFontPathValue by rememberPreference(echo.music.iad1tya.constants.CustomFontPathKey, "")
 
   val brandFont =
@@ -65,7 +65,7 @@ fun echomusicTheme(
     }
 
   val useSystemDynamicColor =
-    (themeColor == DefaultThemeColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
+    (rememberPreference(echo.music.iad1tya.constants.DynamicThemeKey, false).value && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
 
   val baseColorScheme =
     if (useSystemDynamicColor) {

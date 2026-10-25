@@ -145,9 +145,9 @@ fun AppearanceSettings(
 ) {
   val scrollState = androidx.compose.foundation.rememberScrollState()
 
-  val (selectedFontValue) = rememberPreference(SelectedFontKey, defaultValue = AppFont.SYSTEM.value)
+  val (selectedFontValue) = rememberPreference(SelectedFontKey, defaultValue = AppFont.OUTFIT.value)
   val (dynamicTheme, onDynamicThemeChange) =
-    rememberPreference(DynamicThemeKey, defaultValue = true)
+    rememberPreference(DynamicThemeKey, defaultValue = false)
   val (enableLegacyIcon, onEnableLegacyIconChange) =
     rememberPreference(echo.music.iad1tya.constants.EnableLegacyIconKey, defaultValue = false)
 
@@ -189,17 +189,17 @@ fun AppearanceSettings(
   }
 
   val (useNewPlayerDesign, onUseNewPlayerDesignChange) =
-    rememberPreference(UseNewPlayerDesignKey, defaultValue = true)
+    rememberPreference(UseNewPlayerDesignKey, defaultValue = false)
   val (showCodecOnPlayer, onShowCodecOnPlayerChange) =
     rememberPreference(echo.music.iad1tya.constants.ShowCodecOnPlayerKey, defaultValue = false)
   val (hidePlayerSlider, onHidePlayerSliderChange) =
-    rememberPreference(echo.music.iad1tya.constants.HidePlayerSliderKey, defaultValue = false)
+    rememberPreference(echo.music.iad1tya.constants.HidePlayerSliderKey, defaultValue = true)
   val (hidePlayerThumbnail, onHidePlayerThumbnailChange) =
     rememberPreference(HidePlayerThumbnailKey, defaultValue = false)
   val (cropAlbumArt, onCropAlbumArtChange) =
     rememberPreference(CropAlbumArtKey, defaultValue = false)
   val (playerBackground, onPlayerBackgroundChange) =
-    rememberEnumPreference(PlayerBackgroundStyleKey, defaultValue = PlayerBackgroundStyle.GRADIENT)
+    rememberEnumPreference(PlayerBackgroundStyleKey, defaultValue = PlayerBackgroundStyle.BLUR)
   val (miniPlayerBackground, onMiniPlayerBackgroundChange) =
     rememberEnumPreference(
       MiniPlayerBackgroundStyleKey,
@@ -234,7 +234,7 @@ fun AppearanceSettings(
     rememberPreference(HideStatusBarOnFullscreenKey, defaultValue = false)
 
   val (sliderStyle, onSliderStyleChange) =
-    rememberEnumPreference(SliderStyleKey, defaultValue = SliderStyle.SLIM)
+    rememberEnumPreference(SliderStyleKey, defaultValue = SliderStyle.WAVY)
   val (squigglySlider, onSquigglySliderChange) =
     rememberPreference(SquigglySliderKey, defaultValue = false)
   val (wavyPlayPause, onWavyPlayPauseChange) =
@@ -244,7 +244,7 @@ fun AppearanceSettings(
   val (swipeSensitivity, onSwipeSensitivityChange) =
     rememberPreference(SwipeSensitivityKey, defaultValue = 0.73f)
   val (canvasThumbnailAnimation, onCanvasThumbnailAnimationChange) =
-    rememberPreference(CanvasThumbnailAnimationKey, defaultValue = false)
+    rememberPreference(CanvasThumbnailAnimationKey, defaultValue = true)
   val (rotatingThumbnail, onRotatingThumbnailChange) =
     rememberPreference(RotatingThumbnailKey, defaultValue = false)
   val (gridItemSize, onGridItemSizeChange) =

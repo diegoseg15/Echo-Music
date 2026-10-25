@@ -299,11 +299,11 @@ fun BottomSheetPlayer(
   val playerConnection = LocalPlayerConnection.current ?: return
 
   val (useNewPlayerDesign, onUseNewPlayerDesignChange) =
-    rememberPreference(UseNewPlayerDesignKey, defaultValue = true)
+    rememberPreference(UseNewPlayerDesignKey, defaultValue = false)
   val showCodecOnPlayer by
     rememberPreference(echo.music.iad1tya.constants.ShowCodecOnPlayerKey, false)
   val hidePlayerSlider by
-    rememberPreference(echo.music.iad1tya.constants.HidePlayerSliderKey, false)
+    rememberPreference(echo.music.iad1tya.constants.HidePlayerSliderKey, true)
   val (hidePlayerThumbnail, onHidePlayerThumbnailChange) =
     rememberPreference(HidePlayerThumbnailKey, false)
   val showSeekButtons by rememberPreference(echo.music.iad1tya.constants.ShowSeekButtonsKey, false)
@@ -321,7 +321,7 @@ fun BottomSheetPlayer(
   val playerBackgroundPref by
     rememberEnumPreference(
       key = PlayerBackgroundStyleKey,
-      defaultValue = PlayerBackgroundStyle.GRADIENT
+      defaultValue = PlayerBackgroundStyle.BLUR
     )
   val playerBackground = playerBackgroundPref
   val playerButtonsStyle by
@@ -444,7 +444,7 @@ fun BottomSheetPlayer(
   val playerVolume by playerConnection.service.playerVolume.collectAsState()
 
   val (audioQuality) = rememberEnumPreference(AudioQualityKey, defaultValue = AudioQuality.OPUS)
-  val sliderStyle by rememberEnumPreference(SliderStyleKey, SliderStyle.SLIM)
+  val sliderStyle by rememberEnumPreference(SliderStyleKey, SliderStyle.WAVY)
   val squigglySlider by rememberPreference(SquigglySliderKey, defaultValue = false)
   val wavyPlayPause by rememberPreference(WavyPlayPauseKey, defaultValue = true)
 

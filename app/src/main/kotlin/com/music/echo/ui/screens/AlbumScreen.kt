@@ -145,7 +145,7 @@ fun AlbumScreen(
   val hideVideoSongsPref by rememberPreference(key = HideVideoSongsKey, defaultValue = false)
   val hideVideoSongs = if (dataSaverEnabled) true else hideVideoSongsPref
   val albumCanvasEnabledPref by
-    rememberPreference(key = AlbumCanvasEnabledKey, defaultValue = false)
+    rememberPreference(key = AlbumCanvasEnabledKey, defaultValue = true)
   val albumCanvasEnabled = if (dataSaverEnabled) false else albumCanvasEnabledPref
 
   val canvasArtwork =

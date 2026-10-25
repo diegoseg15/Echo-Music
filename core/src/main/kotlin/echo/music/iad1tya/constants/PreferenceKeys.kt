@@ -874,7 +874,7 @@ enum class AppFont(val value: String) {
   CUSTOM("custom");
 
   companion object {
-    fun fromValue(value: String): AppFont = entries.find { it.value == value } ?: SYSTEM
+    fun fromValue(value: String): AppFont = entries.find { it.value == value } ?: OUTFIT
   }
 }
 

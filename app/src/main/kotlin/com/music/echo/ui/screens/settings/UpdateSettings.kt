@@ -133,7 +133,7 @@ fun UpdateSettings(
               }
             },
             onClick = {
-              val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://echomusic.fun"))
+              val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/diegoseg15/Echo-Music/tags"))
               context.startActivity(intent)
             }
           )
@@ -142,7 +142,7 @@ fun UpdateSettings(
 
     Text(
       text =
-        "To download updates, you will be redirected to our official site containing ads. This helps fund the app's development. Thank you for your support!",
+        "To download updates, you will be redirected to the official repository releases and tags.",
       style = MaterialTheme.typography.bodySmall,
       color = MaterialTheme.colorScheme.onSurfaceVariant,
       modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 16.dp)

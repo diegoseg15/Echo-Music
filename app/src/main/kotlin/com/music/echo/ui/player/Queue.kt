@@ -283,7 +283,7 @@ fun Queue(
   var locked by rememberPreference(QueueEditLockKey, defaultValue = false)
 
   val (useNewPlayerDesign, onUseNewPlayerDesignChange) =
-    rememberPreference(UseNewPlayerDesignKey, defaultValue = true)
+    rememberPreference(UseNewPlayerDesignKey, defaultValue = false)
   val (showCommentButton) = rememberPreference(ShowCommentButtonKey, defaultValue = false)
 
   val coroutineScope = rememberCoroutineScope()

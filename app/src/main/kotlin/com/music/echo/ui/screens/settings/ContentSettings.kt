@@ -251,7 +251,7 @@ fun ContentSettings(
   val (ipVersion, onIpVersionChange) =
     rememberEnumPreference(IpVersionKey, defaultValue = IpVersion.AUTO)
   val (albumCanvasEnabled, onAlbumCanvasEnabledChange) =
-    rememberPreference(key = AlbumCanvasEnabledKey, defaultValue = false)
+    rememberPreference(key = AlbumCanvasEnabledKey, defaultValue = true)
 
   var showPlaybackLogsDialog by rememberSaveable { mutableStateOf(false) }
   var showSuggestionSheet by rememberSaveable { mutableStateOf(false) }

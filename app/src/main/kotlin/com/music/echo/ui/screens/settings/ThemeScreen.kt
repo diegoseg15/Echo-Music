@@ -93,13 +93,13 @@ fun ThemeScreen(navController: NavController, highlightKey: String? = null) {
   }
   val (selectedThemeColorInt, onSelectedThemeColorChange) =
     rememberPreference(SelectedThemeColorKey, DefaultThemeColor.toArgb())
-  val (_, onDynamicThemeChange) = rememberPreference(DynamicThemeKey, defaultValue = true)
+  val (dynamicTheme, onDynamicThemeChange) = rememberPreference(DynamicThemeKey, defaultValue = false)
 
   val selectedThemeColor = Color(selectedThemeColorInt)
 
   val handleColorSelection: (Color) -> Unit = { color ->
     onSelectedThemeColorChange(color.toArgb())
-    onDynamicThemeChange(color == DefaultThemeColor)
+    onDynamicThemeChange(false)
   }
 
   Scaffold(
@@ -231,16 +231,17 @@ fun ThemeScreen(navController: NavController, highlightKey: String? = null) {
             modifier = Modifier.fillMaxWidth().padding(24.dp),
             verticalArrangement = Arrangement.spacedBy(20.dp)
           ) {
-            val isDynamic = selectedThemeColor == DefaultThemeColor
+            val isDynamic = dynamicTheme
             Row(
               modifier =
                 Modifier.fillMaxWidth()
                   .clip(RoundedCornerShape(16.dp))
                   .clickable {
                     if (!isDynamic) {
-                      handleColorSelection(DefaultThemeColor)
+                      onDynamicThemeChange(true)
                     } else {
-                      handleColorSelection(Color(0xFF1E88E5))
+                      onDynamicThemeChange(false)
+                      handleColorSelection(DefaultThemeColor)
                     }
                   }
                   .padding(8.dp),
@@ -276,9 +277,10 @@ fun ThemeScreen(navController: NavController, highlightKey: String? = null) {
                 checked = isDynamic,
                 onCheckedChange = { checked ->
                   if (checked) {
-                    handleColorSelection(DefaultThemeColor)
+                    onDynamicThemeChange(true)
                   } else {
-                    handleColorSelection(Color(0xFF1E88E5))
+                    onDynamicThemeChange(false)
+                    handleColorSelection(DefaultThemeColor)
                   }
                 }
               )
@@ -286,9 +288,7 @@ fun ThemeScreen(navController: NavController, highlightKey: String? = null) {
 
             AnimatedVisibility(visible = !isDynamic) {
               HsvColorPicker(
-                initialColor =
-                  if (selectedThemeColor == DefaultThemeColor) Color(0xFF1E88E5)
-                  else selectedThemeColor,
+                initialColor = selectedThemeColor,
                 onColorCommit = { handleColorSelection(it) }
               )
             }

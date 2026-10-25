@@ -271,7 +271,7 @@ fun Thumbnail(
   val playerBackgroundPref by
     rememberEnumPreference(
       key = PlayerBackgroundStyleKey,
-      defaultValue = PlayerBackgroundStyle.GRADIENT
+      defaultValue = PlayerBackgroundStyle.BLUR
     )
   val isLocalMedia = mediaMetadata?.id?.isLocalMediaId() == true
   val playerBackground = playerBackgroundPref
@@ -574,7 +574,7 @@ private fun ThumbnailItem(
     )
 
   val canvasThumbnailAnimation by
-    rememberPreference(CanvasThumbnailAnimationKey, defaultValue = false)
+    rememberPreference(CanvasThumbnailAnimationKey, defaultValue = true)
 
   Box(
     modifier =
