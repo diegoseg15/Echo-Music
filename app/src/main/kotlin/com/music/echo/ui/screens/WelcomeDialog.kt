@@ -57,53 +57,35 @@ fun WelcomeDialog(onDismissRequest: () -> Unit) {
         // Main Header
         WelcomeAppCard()
 
-        WelcomeSectionCard(title = "Follow Developer") {
+        WelcomeSectionCard(title = "Desarrollador") {
           WelcomeActionRow(
-            icon = painterResource(R.drawable.ic_instagram_new),
-            title = "Instagram",
-            subtitle = "@iad1tya",
-            onClick = { uriHandler.openUri("https://instagram.com/iad1tya") }
+            icon = painterResource(R.drawable.website),
+            title = "Sitio Web",
+            subtitle = "https://portfolio-77060.web.app/",
+            onClick = { uriHandler.openUri("https://portfolio-77060.web.app/") }
           )
           WelcomeDivider()
           WelcomeActionRow(
-            icon = painterResource(R.drawable.ic_x_new),
-            title = "X (Twitter)",
-            subtitle = "@xad1tya",
-            onClick = { uriHandler.openUri("https://x.com/xad1tya") }
+            icon = painterResource(R.drawable.ic_instagram_new),
+            title = "Instagram",
+            subtitle = "@diegoseg_15",
+            onClick = { uriHandler.openUri("https://instagram.com/diegoseg_15") }
           )
           WelcomeDivider()
           WelcomeActionRow(
             icon = painterResource(R.drawable.github),
             title = "GitHub",
-            subtitle = "iad1tya",
-            onClick = { uriHandler.openUri("https://github.com/iad1tya") }
+            subtitle = "diegoseg15",
+            onClick = { uriHandler.openUri("https://github.com/diegoseg15") }
           )
         }
 
-        WelcomeSectionCard(title = "Support Echo") {
+        WelcomeSectionCard(title = "Base Original y Agradecimientos") {
           WelcomeActionRow(
-            icon = painterResource(R.drawable.coffee),
-            title = "Buy Me a Coffee",
-            subtitle = "buymeacoffee.com/iad1tya",
-            onClick = { uriHandler.openUri("https://buymeacoffee.com/iad1tya") }
-          )
-          WelcomeDivider()
-          WelcomeActionRow(
-            icon = painterResource(R.drawable.ic_patreon_new),
-            title = "Patreon",
-            subtitle = "patreon.com/cw/iad1tya",
-            onClick = { uriHandler.openUri("https://www.patreon.com/cw/iad1tya") }
-          )
-          WelcomeDivider()
-          WelcomeActionRow(
-            icon = painterResource(R.drawable.upi_new),
-            title = "UPI",
-            subtitle = "iad1tya@upi",
-            onClick = {
-              uriHandler.openUri(
-                "https://intradeus.github.io/http-protocol-redirector/?r=upi://pay?pa=iad1tya@upi&pn=Aditya%20Yadav&am=&tn=Thank%20You%20so%20much%20for%20this%20support"
-              )
-            }
+            icon = painterResource(R.drawable.github),
+            title = "iad1tya",
+            subtitle = "Creador original de Echo Music",
+            onClick = { uriHandler.openUri("https://github.com/iad1tya") }
           )
         }
 
@@ -172,12 +154,11 @@ private fun WelcomeAppCard() {
     ) {
       val isDark = MaterialTheme.colorScheme.surface.luminance() < 0.5f
       AsyncImage(
-        model = R.mipmap.ic_launcher,
+        model = R.mipmap.vylune_crimson_icon,
         contentDescription = null,
         modifier =
-          Modifier.size(100.dp)
-            .clip(CircleShape)
-            .background(MaterialTheme.colorScheme.surfaceContainer),
+          Modifier.size(92.dp)
+            .clip(RoundedCornerShape(22.dp)),
       )
       Spacer(Modifier.height(4.dp))
       Text(
@@ -185,6 +166,12 @@ private fun WelcomeAppCard() {
         style = MaterialTheme.typography.titleLarge,
         fontWeight = FontWeight.Bold,
         color = MaterialTheme.colorScheme.onSurface,
+      )
+      Text(
+        text = "Your music. Your universe.",
+        style = MaterialTheme.typography.bodySmall,
+        fontWeight = FontWeight.Medium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
       )
       Row(
         horizontalArrangement = Arrangement.spacedBy(6.dp),

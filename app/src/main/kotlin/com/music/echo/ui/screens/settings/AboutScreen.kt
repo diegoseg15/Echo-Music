@@ -130,7 +130,7 @@ fun AboutScreen(
               Material3SettingsItem(
                 icon = painterResource(R.drawable.github),
                 title = { Text("GitHub") },
-                description = { Text("@diegoseg_15") },
+                description = { Text("diegoseg15") },
                 onClick = { uriHandler.openUri("https://github.com/diegoseg15") }
               )
             )
@@ -226,7 +226,7 @@ private fun AboutAppCard() {
             scaleY = scale
             cameraDistance = 12f * density
           }
-          .clip(CircleShape)
+          .clip(RoundedCornerShape(22.dp))
           .clickable(
             interactionSource = interactionSource,
             indication = null,
@@ -236,9 +236,8 @@ private fun AboutAppCard() {
     ) {
       if (rotation <= 90f) {
         Image(
-          painter = painterResource(R.drawable.ic_launcher_nobg),
+          painter = painterResource(R.mipmap.vylune_crimson_icon),
           contentDescription = null,
-          colorFilter = ColorFilter.tint(if (isDark) Color.White else Color(0xFFEA3829)),
           modifier = Modifier.fillMaxSize()
         )
       } else {

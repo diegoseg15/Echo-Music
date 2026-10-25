@@ -126,7 +126,7 @@ fun ModernHomeScreen(
             val tagObj = jsonArray.getJSONObject(0)
             val tagName = tagObj.getString("name")
             val cleanVersion = tagName.removePrefix("v").removePrefix("V")
-            if (isVersionNewerOrEqual(cleanVersion, "1.4.4")) {
+            if (isVersionNewer(cleanVersion, echo.music.iad1tya.BuildConfig.VERSION_NAME)) {
               updateVersion = tagName
             }
           }
@@ -1310,9 +1310,9 @@ fun UpdateAvailableBanner(
   }
 }
 
-private fun isVersionNewerOrEqual(v1: String, v2: String): Boolean {
-  val parts1 = v1.split('.').mapNotNull { it.takeWhile { c -> c.isDigit() }.toIntOrNull() }
-  val parts2 = v2.split('.').mapNotNull { it.takeWhile { c -> c.isDigit() }.toIntOrNull() }
+private fun isVersionNewer(tagVer: String, currentVer: String): Boolean {
+  val parts1 = tagVer.split('.').mapNotNull { it.takeWhile { c -> c.isDigit() }.toIntOrNull() }
+  val parts2 = currentVer.split('.').mapNotNull { it.takeWhile { c -> c.isDigit() }.toIntOrNull() }
   val length = maxOf(parts1.size, parts2.size)
   for (i in 0 until length) {
     val num1 = parts1.getOrElse(i) { 0 }
@@ -1320,5 +1320,5 @@ private fun isVersionNewerOrEqual(v1: String, v2: String): Boolean {
     if (num1 > num2) return true
     if (num1 < num2) return false
   }
-  return true
+  return false
 }
