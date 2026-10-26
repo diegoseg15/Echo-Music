@@ -27,13 +27,13 @@
                 android:layout_width="20dp"
                 android:layout_height="20dp"
                 android:src="@drawable/ic_widget_soundwave_logo"
-                android:contentDescription="@string/widget_echo_music" />
+                android:contentDescription="@string/widget_vylune_music" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="8dp"
-                android:text="@string/widget_echo_music"
+                android:text="@string/widget_vylune_music"
                 android:textSize="14sp"
                 android:textStyle="bold"
                 android:textColor="@color/widget_text_title" />
