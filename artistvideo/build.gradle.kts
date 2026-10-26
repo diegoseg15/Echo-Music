@@ -5,7 +5,7 @@ plugins {
 }
 
 android {
-  namespace = "echo.music.iad1tya.artistvideo"
+  namespace = "com.vylune.music.artistvideo"
   compileSdk = 37
 
   defaultConfig { minSdk = 26 }
