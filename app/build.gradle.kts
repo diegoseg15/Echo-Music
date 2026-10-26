@@ -25,12 +25,12 @@ if (hasGoogleServicesConfig) {
 }
 
 android {
-  namespace = "echo.music.iad1tya"
+  namespace = "com.vylune.music"
   compileSdk = 37
   ndkVersion = "28.2.13676358"
 
   defaultConfig {
-    applicationId = "echo.music.iad1tya"
+    applicationId = "com.vylune.music"
     minSdk = 26
     targetSdk = 36
     versionCode = 165
@@ -330,7 +330,7 @@ dependencies {
   implementation(project(":shazamkit"))
   implementation(project(":artistvideo"))
   implementation(project(":applecanvas"))
-  implementation(project(":echomusiccanvas"))
+  implementation(project(":vylunecanvas"))
   implementation(project(":paxsenixlyrics"))
   implementation(project(":unison"))
 
