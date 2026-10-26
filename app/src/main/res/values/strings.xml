@@ -3,7 +3,7 @@
 <!-- Upstream InnerTune strings -->
 <!-- Do not add new features here -->
 <!-- Try to re-use strings here, but be careful on its usage e.g. verb vs noun -->
-<!-- "InnerTune" is replaced with "echomusic" -->
+<!-- "InnerTune" is replaced with "Vylune" -->
 <!-- Translators: Do not modify this file for translations, use InnerTune's Weblate instead. -->
 
 <resources>
@@ -436,7 +436,7 @@
     <string name="restore_failed">Failed to restore backup</string>
 
     <string name="discord_integration">Discord Integration</string>
-    <string name="discord_information">echomusic uses the KizzyRPC library to set your Discord account\'s status. This involves using the Discord Gateway connection, which may be considered a violation of Discord\'s TOS. However, there are no known cases of user accounts being suspended for this reason. Use at your own risk.\n\echomusic will only extract your token, and everything else is stored locally.</string>
+    <string name="discord_information">Vylune uses the KizzyRPC library to set your Discord account\'s status. This involves using the Discord Gateway connection, which may be considered a violation of Discord\'s TOS. However, there are no known cases of user accounts being suspended for this reason. Use at your own risk.\n\Vylune will only extract your token, and everything else is stored locally.</string>
     <string name="dismiss">Dismiss</string>
     <string name="options">Options</string>
     <string name="preview">Preview</string>
@@ -464,7 +464,7 @@
     <string name="listen_together_smart_resync">Smart Network Resync</string>
     <string name="listen_together_smart_resync_desc">Automatically catch up with the host after a connection drop</string>
     <string name="spotify_import_title">Import From Spotify</string>
-    <string name="spotify_import_desc">Connect Spotify, choose playlists, and mirror them into local VYLUNE playlists.</string>
+    <string name="spotify_import_desc">Connect Spotify, choose playlists, and mirror them into local Vylune playlists.</string>
     <string name="spotify_connect">Connect Spotify</string>
     <string name="spotify_refresh">Refresh Spotify library</string>
     <string name="spotify_select_sources">Select Spotify playlists</string>
@@ -517,17 +517,17 @@
     <string name="recognition_notification_processing">Identifying…</string>
     <string name="recognition_notification_no_match">No match found</string>
     <string name="recognition_notification_failed">Recognition failed</string>
-    <string name="listen_on_echo_music">Listen on VYLUNE</string>
+    <string name="listen_on_vylune_music">Listen on Vylune</string>
     <string name="qs_tile_music_recognizer">Recognize music</string>
     <string name="listenbrainz_scrobbling">ListenBrainz scrobbling</string>
     <string name="listenbrainz_scrobbling_description">Automatically submit your listened tracks to ListenBrainz</string>
     <string name="export_directory_unavailable">Unable to access an export directory on this device. Please set one manually.</string>
     <string name="set_listenbrainz_token">Set ListenBrainz Token</string>
 
-    <!-- Echo Extractor Settings -->
-    <string name="youtube_decryption_settings">Echo Extractor</string>
+    <!-- Vylune Extractor Settings -->
+    <string name="youtube_decryption_settings">Vylune Extractor</string>
     <string name="youtube_decryption_desc">Configure extractor settings</string>
-    <string name="youtube_decryption_support">Echo Extractor</string>
+    <string name="youtube_decryption_support">Vylune Extractor</string>
     <string name="youtube_decryption_support_desc">Automatically extracts YouTube playback configurations. Locked to Active.</string>
     <string name="force_update_cipher">Force Update Configurations</string>
     <string name="force_update_cipher_desc">Download the latest extractor override mappings. Limited to 3 updates per day.</string>
@@ -678,7 +678,7 @@
     <string name="display_density_desc">Manage Display density settings</string>
     <string name="download_quality_title_desc">Manage Download Quality settings</string>
     <string name="downloaded_songs_desc">Manage Downloaded songs settings</string>
-    <string name="echomusic_1_desc">Manage Vivi Music (Fluid) settings</string>
+    <string name="vylune_1_desc">Manage Vylune (Fluid) settings</string>
     <string name="enable_desc">Enable or disable</string>
     <string name="enable_authentication_desc">Enable or disable authentication</string>
     <string name="enable_dynamic_theme_desc">Enable or disable dynamic theme</string>
@@ -854,7 +854,7 @@
     <string name="scrobble_delay_minutes_desc">Manage Scrobble delay minutes settings</string>
     <string name="ai_recommendations_refresh_desc">Configure AI settings for Refresh Recommendations</string>
     <string name="last_updated_desc">Manage Last updated settings</string>
-    <string name="youtube_decryption_settings_desc">Manage Echo Extractor settings</string>
+    <string name="youtube_decryption_settings_desc">Manage Vylune Extractor settings</string>
     <string name="refresh_desc">Manage refresh settings</string>
     <string name="activity_status_desc">Manage activity_status settings</string>
     <string name="platform_status_desc">Manage platform_status settings</string>
@@ -874,41 +874,41 @@
     <string name="listen_together_logs_desc">Manage Connection logs settings</string>
     <string name="listen_together_choose_server_desc">Manage Choose server settings</string>
 
-    <!-- Echo Brain -->
-    <string name="echo_brain_analyzed_artists">Analyzed Artists</string>
-    <plurals name="echo_brain_artists_mapped">
+    <!-- Vylune Brain -->
+    <string name="vylune_brain_analyzed_artists">Analyzed Artists</string>
+    <plurals name="vylune_brain_artists_mapped">
         <item quantity="one">%1$d artist mapped</item>
         <item quantity="other">%1$d artists mapped</item>
     </plurals>
-    <string name="echo_brain_beta">Echo Brain (Beta)</string>
-    <string name="echo_brain_data_management">Data Management</string>
-    <string name="echo_brain_discovered_genres">Discovered Genres</string>
-    <plurals name="echo_brain_distinct_genres_identified">
+    <string name="vylune_brain_beta">Vylune Brain (Beta)</string>
+    <string name="vylune_brain_data_management">Data Management</string>
+    <string name="vylune_brain_discovered_genres">Discovered Genres</string>
+    <plurals name="vylune_brain_distinct_genres_identified">
         <item quantity="one">%1$d distinct genre identified</item>
         <item quantity="other">%1$d distinct genres identified</item>
     </plurals>
-    <string name="echo_brain_enable">Enable Echo Brain</string>
-    <string name="echo_brain_enable_desc">Automatically add AI recommendations based on your listening habits</string>
-    <string name="echo_brain_export_failed">Export failed</string>
-    <string name="echo_brain_export_profile">Export Profile</string>
-    <string name="echo_brain_export_profile_desc">Save your neural map to a file</string>
-    <string name="echo_brain_import_failed_invalid_file">Import failed: invalid file</string>
-    <string name="echo_brain_import_profile">Import Profile</string>
-    <string name="echo_brain_import_profile_desc">Load a previously saved neural map</string>
-    <string name="echo_brain_initiate">Initiate</string>
-    <plurals name="echo_brain_interactions_tracked">
+    <string name="vylune_brain_enable">Enable Vylune Brain</string>
+    <string name="vylune_brain_enable_desc">Automatically add AI recommendations based on your listening habits</string>
+    <string name="vylune_brain_export_failed">Export failed</string>
+    <string name="vylune_brain_export_profile">Export Profile</string>
+    <string name="vylune_brain_export_profile_desc">Save your neural map to a file</string>
+    <string name="vylune_brain_import_failed_invalid_file">Import failed: invalid file</string>
+    <string name="vylune_brain_import_profile">Import Profile</string>
+    <string name="vylune_brain_import_profile_desc">Load a previously saved neural map</string>
+    <string name="vylune_brain_initiate">Initiate</string>
+    <plurals name="vylune_brain_interactions_tracked">
         <item quantity="one">%1$d interaction tracked</item>
         <item quantity="other">%1$d interactions tracked</item>
     </plurals>
-    <string name="echo_brain_learning_level">Learning Level</string>
-    <string name="echo_brain_profile_exported_successfully">Profile exported successfully</string>
-    <string name="echo_brain_profile_imported_successfully">Profile imported successfully</string>
-    <string name="echo_brain_profile_statistics">Profile Statistics</string>
-    <string name="echo_brain_reset_neural_profile">Reset Neural Profile</string>
-    <string name="echo_brain_reset_neural_profile_desc">This will permanently delete all learned preferences. The engine will start learning from scratch.</string>
-    <string name="echo_brain_reset_profile">Reset Profile</string>
-    <string name="echo_brain_reset_profile_desc">Erase all learned data and start over</string>
-    <string name="echo_brain_total_interactions">Total Interactions</string>
+    <string name="vylune_brain_learning_level">Learning Level</string>
+    <string name="vylune_brain_profile_exported_successfully">Profile exported successfully</string>
+    <string name="vylune_brain_profile_imported_successfully">Profile imported successfully</string>
+    <string name="vylune_brain_profile_statistics">Profile Statistics</string>
+    <string name="vylune_brain_reset_neural_profile">Reset Neural Profile</string>
+    <string name="vylune_brain_reset_neural_profile_desc">This will permanently delete all learned preferences. The engine will start learning from scratch.</string>
+    <string name="vylune_brain_reset_profile">Reset Profile</string>
+    <string name="vylune_brain_reset_profile_desc">Erase all learned data and start over</string>
+    <string name="vylune_brain_total_interactions">Total Interactions</string>
 
     <!-- Missing translations - added to fix ExtraTranslation CI -->
     <string name="add_folder">Add folder</string>
