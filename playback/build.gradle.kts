@@ -6,7 +6,7 @@ plugins {
 }
 
 android {
-  namespace = "com.music.echo.playback"
+  namespace = "com.vylune.music.playback"
   compileSdk = 37
   defaultConfig { minSdk = 26 }
   compileOptions {
