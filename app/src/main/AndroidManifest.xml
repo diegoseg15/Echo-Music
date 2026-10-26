@@ -64,7 +64,7 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="false"
         android:largeHeap="true"
-        android:theme="@style/Theme.echomusic"
+        android:theme="@style/Theme.Vylune"
         tools:targetApi="tiramisu">
         <uses-library
             android:name="org.apache.http.legacy"
@@ -73,7 +73,7 @@
         <activity
             android:name=".ui.screens.CrashActivity"
             android:exported="false"
-            android:theme="@style/Theme.echomusic"
+            android:theme="@style/Theme.Vylune"
             android:excludeFromRecents="true"
             android:process=":crash" />
 
@@ -81,7 +81,7 @@
             android:name=".MainActivity"
             android:exported="true"
             android:launchMode="singleTask"
-            android:theme="@style/Theme.echomusic"
+            android:theme="@style/Theme.Vylune"
             android:windowSoftInputMode="adjustResize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -121,11 +121,11 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
 
-                <data android:scheme="echomusic" />
+                <data android:scheme="vylune" />
                 <data android:host="listen" />
             </intent-filter>
 
-            <!-- Echo Music Share Links -->
+            <!-- Vylune Share Links -->
             <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW" />
 
@@ -393,9 +393,9 @@
             android:label="@string/widget_music_player">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
-                <action android:name="echo.music.iad1tya.widget.PLAY_PAUSE" />
-                <action android:name="echo.music.iad1tya.widget.LIKE" />
-                <action android:name="echo.music.iad1tya.widget.UPDATE_WIDGET" />
+                <action android:name="com.vylune.music.widget.PLAY_PAUSE" />
+                <action android:name="com.vylune.music.widget.LIKE" />
+                <action android:name="com.vylune.music.widget.UPDATE_WIDGET" />
             </intent-filter>
 
             <meta-data
@@ -410,9 +410,9 @@
             android:label="@string/widget_turntable">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
-                <action android:name="echo.music.iad1tya.widget.TURNTABLE_PLAY_PAUSE" />
-                <action android:name="echo.music.iad1tya.widget.TURNTABLE_LIKE" />
-                <action android:name="echo.music.iad1tya.widget.UPDATE_TURNTABLE_WIDGET" />
+                <action android:name="com.vylune.music.widget.TURNTABLE_PLAY_PAUSE" />
+                <action android:name="com.vylune.music.widget.TURNTABLE_LIKE" />
+                <action android:name="com.vylune.music.widget.UPDATE_TURNTABLE_WIDGET" />
             </intent-filter>
 
             <meta-data
@@ -423,7 +423,7 @@
         <!-- Google Cast Options Provider -->
         <meta-data
             android:name="com.google.android.gms.cast.framework.OPTIONS_PROVIDER_CLASS_NAME"
-            android:value="echo.music.iad1tya.cast.CastOptionsProvider" />
+            android:value="com.vylune.music.cast.CastOptionsProvider" />
         <!-- Google Cast Reconnection Service (required by setEnableReconnectionService(true)) -->
         <service
             android:name="com.google.android.gms.cast.framework.ReconnectionService"
@@ -444,131 +444,131 @@
 
         <!-- Echo Modern Widget (4x2) -->
         <receiver
-            android:name=".widget.EchoModernWidgetReceiver"
+            android:name=".widget.VyluneModernWidgetReceiver"
             android:exported="true"
             android:label="@string/widget_modern_name">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
-                <action android:name="echo.music.iad1tya.widget.PLAY_PAUSE" />
-                <action android:name="echo.music.iad1tya.widget.LIKE" />
-                <action android:name="echo.music.iad1tya.widget.NEXT" />
-                <action android:name="echo.music.iad1tya.widget.PREVIOUS" />
-                <action android:name="echo.music.iad1tya.widget.UPDATE_WIDGET" />
+                <action android:name="com.vylune.music.widget.PLAY_PAUSE" />
+                <action android:name="com.vylune.music.widget.LIKE" />
+                <action android:name="com.vylune.music.widget.NEXT" />
+                <action android:name="com.vylune.music.widget.PREVIOUS" />
+                <action android:name="com.vylune.music.widget.UPDATE_WIDGET" />
             </intent-filter>
             <meta-data
                 android:name="android.appwidget.provider"
-                android:resource="@xml/echo_modern_widget_info" />
+                android:resource="@xml/vylune_modern_widget_info" />
         </receiver>
 
         <!-- Echo Compact Glow Widget (2x2) -->
         <receiver
-            android:name=".widget.EchoSquareWidgetReceiver"
+            android:name=".widget.VyluneSquareWidgetReceiver"
             android:exported="true"
             android:label="@string/widget_square_name">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
-                <action android:name="echo.music.iad1tya.widget.PLAY_PAUSE" />
-                <action android:name="echo.music.iad1tya.widget.LIKE" />
-                <action android:name="echo.music.iad1tya.widget.NEXT" />
-                <action android:name="echo.music.iad1tya.widget.PREVIOUS" />
-                <action android:name="echo.music.iad1tya.widget.UPDATE_WIDGET" />
+                <action android:name="com.vylune.music.widget.PLAY_PAUSE" />
+                <action android:name="com.vylune.music.widget.LIKE" />
+                <action android:name="com.vylune.music.widget.NEXT" />
+                <action android:name="com.vylune.music.widget.PREVIOUS" />
+                <action android:name="com.vylune.music.widget.UPDATE_WIDGET" />
             </intent-filter>
             <meta-data
                 android:name="android.appwidget.provider"
-                android:resource="@xml/echo_square_widget_info" />
+                android:resource="@xml/vylune_square_widget_info" />
         </receiver>
 
         <!-- Echo Showcase Card Widget (4x4) -->
         <receiver
-            android:name=".widget.EchoShowcaseWidgetReceiver"
+            android:name=".widget.VyluneShowcaseWidgetReceiver"
             android:exported="true"
             android:label="@string/widget_showcase_name">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
-                <action android:name="echo.music.iad1tya.widget.PLAY_PAUSE" />
-                <action android:name="echo.music.iad1tya.widget.LIKE" />
-                <action android:name="echo.music.iad1tya.widget.NEXT" />
-                <action android:name="echo.music.iad1tya.widget.PREVIOUS" />
-                <action android:name="echo.music.iad1tya.widget.UPDATE_WIDGET" />
+                <action android:name="com.vylune.music.widget.PLAY_PAUSE" />
+                <action android:name="com.vylune.music.widget.LIKE" />
+                <action android:name="com.vylune.music.widget.NEXT" />
+                <action android:name="com.vylune.music.widget.PREVIOUS" />
+                <action android:name="com.vylune.music.widget.UPDATE_WIDGET" />
             </intent-filter>
             <meta-data
                 android:name="android.appwidget.provider"
-                android:resource="@xml/echo_showcase_widget_info" />
+                android:resource="@xml/vylune_showcase_widget_info" />
         </receiver>
 
         <!-- Echo Slim Pill Strip Widget (4x1) -->
         <receiver
-            android:name=".widget.EchoSlimWidgetReceiver"
+            android:name=".widget.VyluneSlimWidgetReceiver"
             android:exported="true"
             android:label="@string/widget_slim_name">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
-                <action android:name="echo.music.iad1tya.widget.PLAY_PAUSE" />
-                <action android:name="echo.music.iad1tya.widget.LIKE" />
-                <action android:name="echo.music.iad1tya.widget.NEXT" />
-                <action android:name="echo.music.iad1tya.widget.PREVIOUS" />
-                <action android:name="echo.music.iad1tya.widget.UPDATE_WIDGET" />
+                <action android:name="com.vylune.music.widget.PLAY_PAUSE" />
+                <action android:name="com.vylune.music.widget.LIKE" />
+                <action android:name="com.vylune.music.widget.NEXT" />
+                <action android:name="com.vylune.music.widget.PREVIOUS" />
+                <action android:name="com.vylune.music.widget.UPDATE_WIDGET" />
             </intent-filter>
             <meta-data
                 android:name="android.appwidget.provider"
-                android:resource="@xml/echo_slim_widget_info" />
+                android:resource="@xml/vylune_slim_widget_info" />
         </receiver>
 
         <!-- Echo Vinyl Square Turntable Widget (2x2/3x3) -->
         <receiver
-            android:name=".widget.EchoVinylWidgetReceiver"
+            android:name=".widget.VyluneVinylWidgetReceiver"
             android:exported="true"
             android:label="@string/widget_vinyl_name">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
-                <action android:name="echo.music.iad1tya.widget.PLAY_PAUSE" />
-                <action android:name="echo.music.iad1tya.widget.LIKE" />
-                <action android:name="echo.music.iad1tya.widget.NEXT" />
-                <action android:name="echo.music.iad1tya.widget.PREVIOUS" />
-                <action android:name="echo.music.iad1tya.widget.UPDATE_WIDGET" />
+                <action android:name="com.vylune.music.widget.PLAY_PAUSE" />
+                <action android:name="com.vylune.music.widget.LIKE" />
+                <action android:name="com.vylune.music.widget.NEXT" />
+                <action android:name="com.vylune.music.widget.PREVIOUS" />
+                <action android:name="com.vylune.music.widget.UPDATE_WIDGET" />
             </intent-filter>
             <meta-data
                 android:name="android.appwidget.provider"
-                android:resource="@xml/echo_vinyl_widget_info" />
+                android:resource="@xml/vylune_vinyl_widget_info" />
         </receiver>
 
         <!-- Echo Vintage Cream Turntable Widget (4x2) -->
         <receiver
-            android:name=".widget.EchoVintageWidgetReceiver"
+            android:name=".widget.VyluneVintageWidgetReceiver"
             android:exported="true"
             android:label="@string/widget_vintage_name">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
-                <action android:name="echo.music.iad1tya.widget.PLAY_PAUSE" />
-                <action android:name="echo.music.iad1tya.widget.LIKE" />
-                <action android:name="echo.music.iad1tya.widget.NEXT" />
-                <action android:name="echo.music.iad1tya.widget.PREVIOUS" />
-                <action android:name="echo.music.iad1tya.widget.UPDATE_WIDGET" />
+                <action android:name="com.vylune.music.widget.PLAY_PAUSE" />
+                <action android:name="com.vylune.music.widget.LIKE" />
+                <action android:name="com.vylune.music.widget.NEXT" />
+                <action android:name="com.vylune.music.widget.PREVIOUS" />
+                <action android:name="com.vylune.music.widget.UPDATE_WIDGET" />
             </intent-filter>
             <meta-data
                 android:name="android.appwidget.provider"
-                android:resource="@xml/echo_vintage_widget_info" />
+                android:resource="@xml/vylune_vintage_widget_info" />
         </receiver>
 
         <!-- Echo Adaptive Player Widget (2-in-1 Compact / Expanded Queue) -->
         <receiver
-            android:name=".widget.EchoAdaptiveWidgetReceiver"
+            android:name=".widget.VyluneAdaptiveWidgetReceiver"
             android:exported="true"
             android:label="@string/widget_adaptive_name">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
-                <action android:name="echo.music.iad1tya.widget.PLAY_PAUSE" />
-                <action android:name="echo.music.iad1tya.widget.NEXT" />
-                <action android:name="echo.music.iad1tya.widget.PREVIOUS" />
-                <action android:name="echo.music.iad1tya.widget.SHUFFLE" />
-                <action android:name="echo.music.iad1tya.widget.REPEAT" />
-                <action android:name="echo.music.iad1tya.widget.SKIP_TO_QUEUE_ITEM" />
-                <action android:name="com.music.echo.widget.SKIP_TO_QUEUE_ITEM" />
-                <action android:name="echo.music.iad1tya.widget.UPDATE_WIDGET" />
+                <action android:name="com.vylune.music.widget.PLAY_PAUSE" />
+                <action android:name="com.vylune.music.widget.NEXT" />
+                <action android:name="com.vylune.music.widget.PREVIOUS" />
+                <action android:name="com.vylune.music.widget.SHUFFLE" />
+                <action android:name="com.vylune.music.widget.REPEAT" />
+                <action android:name="com.vylune.music.widget.SKIP_TO_QUEUE_ITEM" />
+                <action android:name="com.vylune.music.widget.SKIP_TO_QUEUE_ITEM" />
+                <action android:name="com.vylune.music.widget.UPDATE_WIDGET" />
             </intent-filter>
             <meta-data
                 android:name="android.appwidget.provider"
-                android:resource="@xml/echo_adaptive_widget_info" />
+                android:resource="@xml/vylune_adaptive_widget_info" />
         </receiver>
 
         <service
@@ -579,7 +579,7 @@
 
 
         <activity
-            android:name="com.music.echo.discord.DiscordOAuthCallbackActivity"
+            android:name="com.vylune.music.discord.DiscordOAuthCallbackActivity"
             android:exported="true"
             android:launchMode="singleTop"
             android:noHistory="true">
@@ -606,9 +606,9 @@
             android:label="@string/widget_recognizer_name">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
-                <action android:name="echo.music.iad1tya.widget.recognizer.TAP_MIC" />
-                <action android:name="echo.music.iad1tya.widget.recognizer.UPDATE" />
-                <action android:name="echo.music.iad1tya.widget.recognizer.RESET" />
+                <action android:name="com.vylune.music.widget.recognizer.TAP_MIC" />
+                <action android:name="com.vylune.music.widget.recognizer.UPDATE" />
+                <action android:name="com.vylune.music.widget.recognizer.RESET" />
             </intent-filter>
 
             <meta-data
@@ -630,7 +630,7 @@
         <service
             android:name=".quicksettings.MusicRecognizerTileService"
             android:label="@string/qs_tile_music_recognizer"
-            android:icon="@drawable/ic_qs_echo_logo"
+            android:icon="@drawable/ic_qs_vylune_logo"
             android:exported="true"
             android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
             <intent-filter>
