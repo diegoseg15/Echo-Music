@@ -1,8 +1,8 @@
-# Privacy Policy for Echo Music App
+# Privacy Policy for Vylune App
 
 ## Introduction
 
-Echo Music ("we," "our," or "us") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our mobile application (the "App").
+Vylune ("we," "our," or "us") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our mobile application (the "App").
 
 ## Information We Collect
 
@@ -117,6 +117,8 @@ We may update this Privacy Policy from time to time. We will notify you of any c
 
 ## Contact Us
 
+> **Pending for the fork owner:** The contact URLs below are retained upstream references, not dedicated Vylune contact channels. Provide and verify fork-specific privacy contacts before distribution.
+
 If you have any questions about this Privacy Policy or our data practices, please contact us:
 
 - **GitHub**: [https://github.com/iad1tya/Echo-Music](https://github.com/iad1tya/Echo-Music)
@@ -141,5 +143,5 @@ This Privacy Policy complies with:
 
 ---
 
-**By using Echo Music, you agree to the collection and use of information in accordance with this Privacy Policy.**
+**By using Vylune, you agree to the collection and use of information in accordance with this Privacy Policy.**
 
