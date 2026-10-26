@@ -1,6 +1,6 @@
 # Setup Instructions
 
-This document provides instructions for setting up the Echo Music project for development.
+This document provides instructions for setting up the Vylune project for development.
 
 ## Prerequisites
 
@@ -74,7 +74,7 @@ KEY_PASSWORD=your_key_password
 
 Open the project in Android Studio or build from the command line.
 
-Echo Music builds as a **GMS** variant with Cast and Firebase support.
+Vylune builds as a **GMS** variant with Cast and Firebase support.
 
 ```bash
 # Debug build
@@ -88,7 +88,7 @@ Echo Music builds as a **GMS** variant with Cast and Firebase support.
 
 ### 6. Configure AI Translation (Optional)
 
-Echo Music supports AI-powered lyrics translation. You can configure this in **Settings -> AI Settings**.
+Vylune supports AI-powered lyrics translation. You can configure this in **Settings -> AI Settings**.
 
 #### Option A: Using OpenRouter (Default)
 
