@@ -1,6 +1,6 @@
 package com.music.innertube.pages
 
-import com.music.echo.metadata.cleaner.ApiText
+import com.vylune.music.metadata.cleaner.ApiText
 import com.music.innertube.models.Album
 import com.music.innertube.models.AlbumItem
 import com.music.innertube.models.Artist

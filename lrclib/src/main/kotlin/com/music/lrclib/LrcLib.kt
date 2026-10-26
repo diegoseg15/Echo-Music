@@ -35,11 +35,11 @@ object LrcLib {
   }
 
   private fun cleanTitle(title: String, artist: String = ""): String {
-    return com.music.echo.metadata.cleaner.MetadataCleaner.clean(title, artist).toSearchQuery().first
+    return com.vylune.music.metadata.cleaner.MetadataCleaner.clean(title, artist).toSearchQuery().first
   }
 
   private fun cleanArtist(artist: String, title: String = ""): String {
-    return com.music.echo.metadata.cleaner.MetadataCleaner.clean(title, artist).toSearchQuery().second
+    return com.vylune.music.metadata.cleaner.MetadataCleaner.clean(title, artist).toSearchQuery().second
   }
 
   private suspend fun queryLyricsWithParams(
@@ -65,7 +65,7 @@ object LrcLib {
     title: String,
     album: String? = null,
   ): List<Track> {
-    val cleaned = com.music.echo.metadata.cleaner.MetadataCleaner.clean(title, artist)
+    val cleaned = com.vylune.music.metadata.cleaner.MetadataCleaner.clean(title, artist)
     val (cleanedTitle, cleanedArtist) = cleaned.toSearchQuery()
     val primaryArtist = cleaned.primaryArtist
 
@@ -126,7 +126,7 @@ object LrcLib {
     duration: Int,
     album: String? = null,
   ) = runCatching {
-    val (cleanedTitle, cleanedArtist) = com.music.echo.metadata.cleaner.MetadataCleaner.clean(title, artist).toSearchQuery()
+    val (cleanedTitle, cleanedArtist) = com.vylune.music.metadata.cleaner.MetadataCleaner.clean(title, artist).toSearchQuery()
     val tracks = queryLyrics(artist, title, album)
 
     val res =
@@ -160,7 +160,7 @@ object LrcLib {
     album: String? = null,
     callback: (String) -> Unit,
   ) {
-    val (cleanedTitle, cleanedArtist) = com.music.echo.metadata.cleaner.MetadataCleaner.clean(title, artist).toSearchQuery()
+    val (cleanedTitle, cleanedArtist) = com.vylune.music.metadata.cleaner.MetadataCleaner.clean(title, artist).toSearchQuery()
     val tracks = queryLyrics(artist, title, album)
     var count = 0
     var plain = 0

@@ -1,6 +1,6 @@
 package com.music.lrclib
 
-import com.music.echo.metadata.cleaner.MetadataCleaner
+import com.vylune.music.metadata.cleaner.MetadataCleaner
 import org.junit.Assert.assertEquals
 import org.junit.Test
 

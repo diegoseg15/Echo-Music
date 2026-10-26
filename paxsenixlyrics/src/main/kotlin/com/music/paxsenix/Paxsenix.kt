@@ -4,7 +4,7 @@ import android.content.Context
 import com.music.paxsenix.models.LyricsResponse
 import com.music.paxsenix.models.SearchResponse
 import com.music.paxsenix.models.SearchResult
-import echo.music.iad1tya.betterlyrics.TTMLParser
+import com.vylune.music.betterlyrics.TTMLParser
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.engine.cio.CIO
@@ -77,11 +77,11 @@ object Paxsenix {
       client ?: throw IllegalStateException("Paxsenix.init() must be called before using Paxsenix")
 
   private fun cleanTitle(title: String, artist: String = ""): String {
-    return com.music.echo.metadata.cleaner.MetadataCleaner.clean(title, artist).toSearchQuery().first
+    return com.vylune.music.metadata.cleaner.MetadataCleaner.clean(title, artist).toSearchQuery().first
   }
 
   private fun cleanArtist(artist: String, title: String = ""): String {
-    return com.music.echo.metadata.cleaner.MetadataCleaner.clean(title, artist).toSearchQuery().second
+    return com.vylune.music.metadata.cleaner.MetadataCleaner.clean(title, artist).toSearchQuery().second
   }
 
   private suspend fun search(query: String): List<SearchResult> =
@@ -104,7 +104,7 @@ object Paxsenix {
     duration: Int,
     album: String? = null,
   ): Result<String> = runCatching {
-    val (cleanedTitle, cleanedArtist) = com.music.echo.metadata.cleaner.MetadataCleaner.clean(title, artist).toSearchQuery()
+    val (cleanedTitle, cleanedArtist) = com.vylune.music.metadata.cleaner.MetadataCleaner.clean(title, artist).toSearchQuery()
 
     Timber.d("getLyrics: title='$title', artist='$artist', duration=$duration")
 
@@ -180,7 +180,7 @@ object Paxsenix {
     val durationMs = duration * 1000
     val cleanupRegex = Regex("""\s*\(.*?\)|\s*\[.*?\]""")
 
-    val (queryTitle, queryArtist) = com.music.echo.metadata.cleaner.MetadataCleaner.clean(title, artist).toSearchQuery()
+    val (queryTitle, queryArtist) = com.vylune.music.metadata.cleaner.MetadataCleaner.clean(title, artist).toSearchQuery()
     val cleanedTitle = queryTitle.replace(cleanupRegex, "").lowercase().trim()
     val cleanedArtist = queryArtist.lowercase()
 
@@ -334,7 +334,7 @@ object Paxsenix {
     album: String? = null,
     callback: (String) -> Unit,
   ) {
-    val (cleanedTitle, cleanedArtist) = com.music.echo.metadata.cleaner.MetadataCleaner.clean(title, artist).toSearchQuery()
+    val (cleanedTitle, cleanedArtist) = com.vylune.music.metadata.cleaner.MetadataCleaner.clean(title, artist).toSearchQuery()
 
     val searchQueries = listOf("$cleanedTitle $cleanedArtist", cleanedTitle)
     var plainFallback: String? = null
